@@ -1,37 +1,94 @@
 ## inji
 
-Render a jinja template from file to stdout.
+Render static jinja2 template files, optionally specifying parameters
+contained in vars files.
 
-Optionally, variables can be supplied to inji in the form of vars (yaml)
-files where invocation data/configuration can be help separately.
-(e.g. per-environment configuration).
+Useful in CI/CD scenarios to keep configuration
+[DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
+across environments.
 
-Multiple varsfiles can be specified and inji will attempt to merge data from
-the files with data from the later files overlaying data in earlier ones.
+### Installation
+
+NOTE: Support for Python2 is now dropped. Python3 is required.
+
+```
+pip install inji
+```
 
 ### Usage
 
-Render a lone Jinja2 template.
+##### Render a lone Jinja2 template.
 
 ```
 inji --template=jello-world.j2
 ```
 
-Render a template passing vars from a YAML file.
+##### Render a template passing vars from a YAML file.
 
 ```
-inji --template=motd.j2 --vars-file=vars.yaml
+inji --template=motd.j2 --vars-file=production.yaml
 ```
 
-Render a template passing 2 variable files containing configuration with the
-second one overriding any configuration from the first.
+vars files must contain valid
+[YAML documents](https://yaml.org/spec/1.2/spec.html#id2800132)
+and can hold either simple
+[scalars](https://yaml.org/spec/1.2/spec.html#id2760844)
+or
+[collections](https://yaml.org/spec/1.2/spec.html#id2759963).
+Your jinja templates must reference these accordingly.
+
+e.g.
+```
+$ cat vars.yaml
+sage: victor
+section: indigo
+
+envoy:
+  names:
+    - alice
+    - bob
+    - chuck
+  location: metaverse
+  origin: world's end
+```
 
 ```
-inji --template=nginx.conf.j2 --vars-file=org.yaml --vars-file=dev-env.yaml
+$ cat hello-world.j2
+Hello {{ envoy.names | join(', ') }}!!
+
+I am {{ sage }}, the {{ section }} sage.
+
+It seems you are at {{ envoy.location }} today and come from {{ envoy.origin }}.
 ```
 
-NOTE
+```
+$ inji -t hello-world.j2 -v vars.yaml
+Hello alice, bob, chuck!!
 
-This is a python2 implementation but should work under python3
+I am victor, the indigo sage.
 
+It seems you are at metaverse today and come from world's end.
+```
+
+##### Render a template using variables from multiple vars files
+
+```
+inji --template=nginx.conf.j2    \
+      --vars-file=web-tier.yaml  \
+      --vars-file=eu-west-1.yaml \
+      --vars-file=prod.yaml  > /etc/nginx/sites-enabled/prod-eu-west-1.conf
+```
+
+This is especially useful in managing layered configuration.
+i.e. variables from files specified later on the command-line
+will be overlain over those defined earlier.
+
+### Etymology
+
+_inji_ is named in keeping of the UNIX tradition of short (memorable?)
+ command names.
+
+_inji_ (_/ɪndʒi:/_) also happens to be the Tamil word for Ginger.
+In this case, it is a near-anagram of _Jinja_ which ostensibly is a homophone
+of Ginger (Zingiber).
 
