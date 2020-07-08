@@ -22,9 +22,12 @@ if sys.argv[1] == 'requirements':
     print('\n'.join(requirements))
     sys.exit(0)
 
+with open('README.md', 'r') as fh:
+    long_description = fh.read()
+
 setup(  name             = 'inji',
         version          = '0.1',
-        description      = "Render Jinja2 templates",
+        description      = 'Render parameterized Jinja2 template files',
         url              = 'https://github.com/shalomb/inji',
         author           = 'Shalom Bhooshi',
         author_email     = 's.bhooshi@gmail.com',
@@ -32,5 +35,16 @@ setup(  name             = 'inji',
         packages         = ['inji'],
         zip_safe         = False,
         scripts          = ['inji/inji'],
-        install_requires = requirements
+        install_requires = requirements,
+        python_requires  = '>=3.5',
+        long_description = long_description,
+        long_description_content_type = 'text/markdown',
+        classifiers=[
+            'Programming Language :: Python :: 3',
+            'Operating System :: OS Independent',
+            'Environment :: Console',
+            'Intended Audience :: System Administrators',
+            'License :: OSI Approved :: Apache Software License',
+            'Topic :: System :: Systems Administration'
+        ]
     )
