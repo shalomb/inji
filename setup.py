@@ -9,7 +9,7 @@ from setuptools import setup
 
 with open('version') as f:
     __version__ = f.read().strip()
-    __version__ = re.sub('^[vV]', '', __version__)
+    __version__ = re.sub('^[vV]|\-\w{8}$', '', __version__)
 
 if sys.argv[1] == 'version':
     print(__version__)

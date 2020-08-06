@@ -10,11 +10,11 @@ from __future__ import print_function, with_statement
 
 import argparse
 import atexit
-import errno
-from glob import glob
+import fnmatch
 from jinja2 import DebugUndefined, StrictUndefined, Undefined, make_logging_undefined
 from jinja2 import Environment, FileSystemLoader
 from jinja2.exceptions import TemplateNotFound, UndefinedError
+import json
 import logging
 import os
 from os.path import abspath, basename, dirname, exists, expandvars, isdir, isfile, join
@@ -24,41 +24,11 @@ import sys
 import tempfile
 import yaml
 
-try:
-  FileNotFoundError
-except NameError:
-  FileNotFoundError = IOError
-
-VarsFileNotFoundError = FileNotFoundError
-
-def merge_dict(x, y):
-  z = x.copy()
-  z.update(y)
-  return z
-
-def render_template(jinja2_template, vars_files, strict_mode_behaviour):
-
-  if not isfile(jinja2_template):
-    raise TemplateNotFound(
-        '"{}", {}'.format(jinja2_template, os.strerror(errno.ENOENT)) )
-
-  vars = {}
-  for file in vars_files:
-    file = file.__str__()
-    with open(file, 'r') as f:
-      try:
-        dict = yaml.load(f, Loader=yaml.SafeLoader)
-        if dict is None:
-          raise TypeError("'{}' contains no data".format(file))
-      except yaml.YAMLError as exc:
-        if strict_mode_behaviour == 'strict':
-          raise
-        print(exc, file=sys.stderr)
-      except TypeError as exc:
-        if strict_mode_behaviour == 'strict':
-          raise
-        print(exc, file=sys.stderr)
-    vars = merge_dict(vars, dict)
+def render_template(
+    template,
+    in_vars,
+    strict_mode_behaviour
+  ):
 
   m = strict_mode_behaviour
   if   m in ['strict', 'StrictUndefined']:
@@ -67,13 +37,10 @@ def render_template(jinja2_template, vars_files, strict_mode_behaviour):
     Handler = Undefined
   elif m in ['keep',   'DebugUndefined']:
     Handler = DebugUndefined
-  else:
-    raise Exception((
-      'Unsupported type "{}" specified to handle undefined variables.\n' +
-      'See http://jinja.pocoo.org/docs/2.10/api/#undefined-types.'
-    ).format(m))
 
-  root = logging.getLogger(jinja2_template)
+  # Setup debug logging on STDERR to have the jinja2 engine emit
+  # its activities
+  root = logging.getLogger(template)
   root.setLevel(logging.DEBUG)
   handler = logging.StreamHandler(sys.stderr)
   logformat = '%(name)s %(levelname)s: %(message)s'
@@ -89,24 +56,35 @@ def render_template(jinja2_template, vars_files, strict_mode_behaviour):
   # preclude complex use cases, we assume the target is the "master" template
   # and any includes, etc it uses are relative to where it resides (not the
   # current directory of the process).
-  dir = dirname(jinja2_template)
+  rootdir = dirname(template)
 
-  j2_env = Environment( loader=FileSystemLoader(dir),
+  j2_env = Environment( loader=FileSystemLoader(rootdir),
                         undefined=UndefinedHandler,
                         trim_blocks=True )
 
   try:
-    jinja2_template = basename(jinja2_template)
-    yield j2_env.get_template(jinja2_template).render(vars)
+    template = basename(template)
+    yield j2_env.get_template(template).render(in_vars)
   except UndefinedError as e:
     raise UndefinedError( "variable {} in template '{}'".format(
-            str(e), jinja2_template) ) from e
+            str(e), template) ) from e
 
-def listdir_recurisve(directory):
-  directory = os.path.expanduser(os.path.expandvars(directory))
-  return [ os.path.join(parent, file)
-            for parent, dirs, files in os.walk(directory)
-            for file in files ]
+
+def read_in_vars(yaml_file):
+  yaml_file = yaml_file.__str__()
+  with open(yaml_file, 'r') as f:
+    try:
+      in_vars = yaml.load(f, Loader=yaml.SafeLoader)
+      if in_vars is None:
+        raise TypeError("'{}' contains no data".format(file))
+    except TypeError as exc:
+      raise exc
+  return in_vars
+
+def recursive_iglob(rootdir='.', pattern='*'):
+  for root, dirnames, filenames in os.walk(rootdir):
+    for filename in fnmatch.filter(filenames, pattern):
+      yield os.path.join(root, filename)
 
 def path(fspath, type='file'):
   """
@@ -120,11 +98,8 @@ def path(fspath, type='file'):
   if not exists(fspath):
     msg = "{0} does not exist".format(prefix)
 
-  if type == 'file' and not isfile(fspath):
+  if type == 'file' and isdir(fspath):
     msg = "{0} is not a file".format(prefix)
-
-  if type == 'dir' and not isdir(fspath):
-    msg = "{0} is not a directory".format(prefix)
 
   if msg is not None:
     raise argparse.ArgumentTypeError(msg)
@@ -145,26 +120,27 @@ def cli_args():
 
   required.add_argument('-t', '-f', '--template',
     action = 'store',  required=False, type=file_or_stdin,
-    dest='jinja2_template', default='-',
+    dest='template', default='-',
     help='/path/to/template.j2 (defaults to -)'
   )
 
-  parser.add_argument('-o', '--overlay',
+  parser.add_argument('-c', '--config', '-j', '--json',
+    action = 'store', required=False,
+    type=lambda x: json.loads(x) if len(x) > 2 else '',
+    dest='config',
+    help='-c "{var1:\"blah\", var2:\"blah\"}"'
+  )
+
+  parser.add_argument('-o', '--overlay', '--overlay-dir',
     action = 'append', required=False, type=lambda p, t='dir': path(p, t),
     dest='overlays', default=[],
     help='/path/to/overlay/'
   )
 
-  parser.add_argument('-i', '--inji-file', '--inji',
-    action = 'store', required=False, type=lambda p, t='file': path(p, t),
-    dest='inji_file',
-    help='/path/to/inji.yaml (defaults to ./inji.yml)'
-  )
-
-  parser.add_argument('-v', '--vars-file', '--vars',
+  parser.add_argument('-v', '-p', '--vars-file', '--vars',
     action = 'append', required=False, type=lambda p, t='file': path(p, t),
-    dest='vars_files', default=[],
-    help='/path/to/vars.yaml (defaults to ./inji.yaml)'
+    dest='in_vars_files', default=[],
+    help='/path/to/vars.yaml'
   )
 
   parser.add_argument('--strict-mode', '-s',
@@ -179,17 +155,35 @@ def cli_args():
 
 
 if __name__ == '__main__':
+
   args = cli_args()
 
-  args.overlays = [ file for d in args.overlays
-                      for file in listdir_recurisve(d)
-                      if re.search('\.ya?ml$', file) ]
+  # in_vars in the local configuration files - precendence 5
+  config_files = fnmatch.filter(os.listdir('.'), "*inji.y*ml")
 
-  if args.inji_file is None:
-    args.inji_file = [ file for file in ['./inji.yml', './inji.yaml']
-                        if exists(file) ]
+  # in_vars in the overlay directories - precendence 4
+  args.overlays = list( f for d in args.overlays
+                          for f in recursive_iglob(d, '*.y*ml') )
 
-  if args.jinja2_template == '-':
+  # This will hold the final vars dict merged from various available sources
+  in_vars = {}
+
+  for file in [ *config_files,
+                *args.overlays,
+                *args.in_vars_files ]:
+    in_vars.update(read_in_vars(file))
+
+  # in_vars from environment variables - precedence 3
+  in_vars.update(os.environ)
+
+  # in_vars at the command line - precedence 2
+  if args.config == '':
+    raise TypeError("Config args string is empty")
+
+  if args.config:
+    in_vars.update(args.config)
+
+  if args.template == '-':
     # Template passed in via stdin. Create template as a tempfile and use it
     # instead but since includes are possible (though not likely), we have to do
     # this in an isolated tmpdir container to prevent inadvertent reading of
@@ -202,10 +196,10 @@ if __name__ == '__main__':
 
     with open(tmpfile, "a+") as f:
       f.write(sys.stdin.read())
-    args.jinja2_template = tmpfile
+    args.template = tmpfile
 
-  for block in render_template( args.jinja2_template,
-                                args.vars_files,
+  for block in render_template( args.template,
+                                in_vars,
                                 args.strict_mode ):
     print(block)
 
