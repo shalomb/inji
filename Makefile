@@ -1,3 +1,8 @@
+# Makefile for python projects
+
+# TODO: Consider modernizing things with Hypermodern Python
+# https://medium.com/@cjolowicz/hypermodern-python-d44485d9d769
+
 THIS_MAKEFILE := $(realpath $(lastword $(MAKEFILE_LIST)))
 THIS_DIR      := $(shell dirname $(THIS_MAKEFILE))
 THIS_PROJECT  := $(shell basename $(THIS_DIR))
@@ -5,8 +10,8 @@ THIS_PROJECT  := $(shell basename $(THIS_DIR))
 package   = $(THIS_PROJECT)
 bin       = venv/bin
 python    = $(bin)/python
-pip       = $(bin)/pip --disable-pip-version-check
-pytest    = $(bin)/pytest -rxXs --color=auto --full-trace -vvv --tb=short -W ignore::DeprecationWarning --showlocals
+pip       = $(bin)/pip3 --disable-pip-version-check
+pytest    = $(bin)/pytest -ra -rxXs --color=auto --full-trace -vvv --tb=short -W ignore::DeprecationWarning --showlocals
 setup     = $(python) ./setup.py
 script    = $(package)/$(package)
 git       = $(shell which git)
@@ -95,13 +100,25 @@ endif
 	@ $(setup) version
 
 # @ bin/test-harness $(filter-out $@,$(MAKECMDGOALS))
-test-bootstrap: venv/ venv/bin/ venv/bin/pip requirements.txt
+test-deps: buildenv $(pip) ## Install (py)test dependencies
 	@:
 
-test:
+test: ## Run pytest tests (argument narrows down by name)
 	@ $(eval args := $(filter-out $@,$(MAKECMDGOALS)))
 	@ $(pytest) tests/**/*.py -k "$(args)"
 
-%:
+test-cov: ## Run coverage tests
+	@ rm -f .coverage
+	@ $(pytest) \
+		--cov-append \
+		--cov-report term \
+		--cov-report=term-missing \
+		--cov-fail-under=96 \
+		--cov inji/ tests/
+
+test-durations: ## Run tests and report durations
+	@ $(pytest) tests/ -vvvv --durations=0
+
+%: ## Fallback to nothing
 	@:
 
