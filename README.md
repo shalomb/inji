@@ -3,9 +3,10 @@
 Render static jinja2 template files, optionally specifying parameters
 contained in vars files.
 
-Useful in CI/CD scenarios to keep configuration
+Useful in CI/CD scenarios where
 [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
-across environments.
+configuration is necessary and the reduction of copy-paste duplication
+can be done through templating/parameterization.
 
 ### Installation
 
