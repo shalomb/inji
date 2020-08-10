@@ -100,12 +100,13 @@ test: ## Run pytest tests (argument narrows down by name)
 
 test-cov: ## Run coverage tests
 	@ rm -f .coverage
-	@ $(pytest) \
-		--cov-append \
-		--cov-report term \
-		--cov-report=term-missing \
-		--cov-fail-under=100 \
-		--cov $$PWD/inji/ tests/**/*
+	@ sh -c '. venv/bin/activate; \
+						$(pytest) \
+							--cov-append \
+							--cov-report term \
+							--cov-report=term-missing \
+							--cov-fail-under=100 \
+							--cov $$PWD/inji/ tests/**/*'
 
 test-durations: ## Run tests and report durations
 	@ $(pytest) tests/**/* -vvvv --durations=0
