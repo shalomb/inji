@@ -58,8 +58,9 @@ release: package ## Upload wheels to PyPi to mark a new release
 
 clean: ## Wipe the  workspace clean
 	@ test -e "$(git)" && $(git) checkout requirements.txt || true
+	@ test -e "$(git)" && $(git) checkout version || true
 	@ ./setup.py clean --all --verbose
-	@ rm -frv .coverage dist/ build/ *.egg-info/ venv/ .*.sw? test*.tap || true
+	@ rm -frv .coverage dist/ build/ *.egg-info/ .*.sw? test*.tap || true
 	@ find . -depth -type d -iname __pycache__ -exec rm -frv {} +
 
 venv-deps: ## Install virtualenv
