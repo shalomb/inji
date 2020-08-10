@@ -15,7 +15,7 @@ usable pattern.
 ### Installation
 
 ```
-# requires python3
+# requires python3 >= 3.6
 
 python3 -m pip install inji    #  or pip3/pip install inji
 ```
