@@ -1,17 +1,23 @@
-## inji
+![inji](./inji-logo.png)
 
-Render static jinja2 template files, optionally specifying parameters
-contained in vars files.
+Inji renders static
+[jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
+templates.
+
+Templates may be parametrized in which case inji can be given one or more
+YAML vars files to source parameters used in the templates.
 
 Useful in CI/CD scenarios where
 [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
-configuration is necessary and the reduction of copy-paste duplication
-can be done through templating/parameterization.
+configuration is necessary and templating/parametrization is a
+usable pattern.
 
 ### Installation
 
 ```
-python3 -m pip install inji    # or pip3 install inji
+# requires python3
+
+python3 -m pip install inji    #  or pip3/pip install inji
 ```
 
 ### Usage
@@ -176,15 +182,6 @@ $ inji  --template=nginx.conf.j2 \  # here $CI_ENV is be some variable your CI s
         > nginx.conf                # e.g. dev, stage, prod
 ```
 
-### Etymology
-
-_inji_ is named in keeping of the UNIX tradition of short (memorable?)
- command names. In this case, it is a 4-letter near-anagram of _Jinja_.
-
-[_inji_](https://en.wikipedia.org/wiki/Ginger#Etymology) (_/ɪndʒi:/_)
-also happens to be the Dravidian word and ostensibly the source of the
-English word Ginger, of which jinja is a partial homophone.
-
 ### Fuller Example
 
 This is a very contrived example showing how to orient a `.gitlab-ci.yml`
@@ -325,3 +322,19 @@ if ! git diff --exit-code .gitlab-ci.yml; then
     git commit --amend -C HEAD --no-verify
 fi
 ```
+
+### Etymology
+
+Why the name inji?
+
+_inji_ is named in keeping of the UNIX tradition of short (memorable?)
+ command names. In this case, it is a 4-letter near-anagram of _Jinja_.
+
+[_inji_](https://en.wikipedia.org/wiki/Ginger#Etymology) (_/ɪndʒi:/_)
+also happens to be the Dravidian word and ostensibly the source of the
+English word Ginger, of which jinja is a partial homophone.
+
+### TODO
+
+[ ] Manage collections of templates e.g. `*.j2`
+[ ] Dry-run syntax checking
