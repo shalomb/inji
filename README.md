@@ -243,10 +243,30 @@ variables:
 To then update the `.gitlab-ci.yml`, run inji with the above.
 
 ```
-$ inji -s strict -t .gitlab-ci.yml.j2 -v .gitlab-ci.yml.vars > .gitlab-ci.yml
+$ inji -t .gitlab-ci.yml.j2 \
+       -v .gitlab-ci.yml.vars > .gitlab-ci.yml
 ```
 
-NOTE: This is not ideal as edits to the above files are not automatically
-reflected in `.gitlab-ci.yml` and but this is easily solved by running inji in
-a [git pre-commit hook](https://git-scm.com/docs/githooks#_pre_commit).
+WARNING: Edits to the above files are not automatically reflected in
+`.gitlab-ci.yml` and some other mechanism using inji to render the latter needs
+to be run before Gitlab acts upon it. e.g. Using a
+[git commit hook](https://git-scm.com/docs/githooks#_pre_commit)
+or
+[gitattribute filter](https://www.bignerdranch.com/blog/git-smudge-and-clean-filters-making-changes-so-you-dont-have-to/)
+, etc.
 
+e.g.
+```
+$ cat .githooks/pre-commit
+#!/bin/sh
+
+set -e
+
+inji -t .gitlab-ci.yml.j2 -v .gitlab-ci.yml.vars > .gitlab-ci.yml
+
+# NOTE: git diff --exit-code ... returns 1 if file has changed
+if ! git diff --exit-code .gitlab-ci.yml; then
+  git add .gitlab-ci.yml &&
+    git commit --amend -C HEAD --no-verify
+fi
+```
