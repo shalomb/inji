@@ -23,6 +23,5 @@ script:
   - make test-cov
 
 after_success:
-  - pip install -U coveralls codecov
+  - pip install -U coveralls
   - coveralls
-  - codecov
