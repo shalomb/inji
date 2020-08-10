@@ -1,6 +1,7 @@
 ![inji](./inji-logo.png)
 
 [![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=master)](https://travis-ci.org/shalomb/inji)
+[![Coverage Status](https://coveralls.io/repos/github/shalomb/inji/badge.svg)](https://coveralls.io/github/shalomb/inji)
 
 Inji renders static
 [jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
