@@ -10,18 +10,22 @@ can be done through templating/parameterization.
 
 ### Installation
 
-NOTE: Support for Python2 is now dropped. Python3 is required.
-
 ```
-pip install inji
+python3 -m pip install inji    # or pip3 install inji
 ```
 
 ### Usage
 
-##### Render a lone Jinja2 template.
+##### Render a Jinja2 template
 
 ```
 inji --template=jello-world.j2
+```
+
+or read the template in from STDIN
+
+```
+my-generator | inji
 ```
 
 ##### Render a template passing vars from a YAML file.
@@ -36,11 +40,47 @@ and can hold either simple
 [scalars](https://yaml.org/spec/1.2/spec.html#id2760844)
 or
 [collections](https://yaml.org/spec/1.2/spec.html#id2759963).
-Your jinja templates then reference these accordingly.
+Your jinja templates then reference these accordingly depending on your context.
 
 e.g.
 
-Building multiple docker image variants from a single template
+A typical case is building multiple docker images - without the assistance
+of a templating tool, you may have to keep and maintain several Dockerfiles
+and corresponding build commands for each image
+- but imagine the yucky prospects of maintaining that kind of
+[WET approach](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself#DRY_vs_WET_solutions).
+
+Instead, to DRY things up, consider a templated Dockerfile like this
+
+```
+$ cat Dockerfile.j2
+FROM {{ distribution }}:{{ version }}    # These jinja2 vars are set by inji
+                                         # from travis' environment variables
+
+MAINTAINER http://my.org/PlatformOps
+
+ENV container       docker
+ENV distribution {{ distribution }}
+ENV version      {{ version }}-{{ ref }} # `ref` is set at inji's CLI
+
+{% if distribution == 'centos' %}        # Conditional execution
+RUN yum -y update && yum clean all
+{% endif %}
+
+{% if distribution == 'debian' %}
+RUN apt update -qq && apt upgrade -y
+{% endif %}
+
+{% if distribution == 'fedora' %}
+RUN dnf -y update && dnf clean all
+{% endif %}
+
+RUN my-awesome-build-script {{ distribution }} {{ version }}
+
+ENTRYPOINT ["/opt/bin/myserv"]
+```
+
+Then a Travis CI build job using inji would look like this.
 
 ```
 $ cat .travis.yml
@@ -74,40 +114,12 @@ before_script:
   - pip install inji
 
 script:
-  - inji -t Dockerfile.j2 -c '{"ref": "'"${CI_COMMIT_REF_NAME:-unknown}"'"}' > Dockerfile
-  - docker build -t "myimage:$distribution-$version" .
+  - json_config='{ "ref": "'"$CI_COMMIT_REF_NAME"'" }'
+  - >
+    inji --template Dockerfile.j2 --config "$json_config" |
+      docker build --pull --tag "myimage:$distribution-$version" -
   - docker push --all-tags "myimage"
 ...
-```
-
-Where the `Dockerfile.j2` template is something like
-
-```
-$ cat Dockerfile.j2
-FROM {{ distribution }}:{{ version }}    # These jinja2 vars are set by inji
-                                         # from travis' environment variables
-
-MAINTAINER http://my.org/PlatformOps
-
-ENV container       docker
-ENV distribution {{ distribution }}
-ENV version      {{ version }}-{{ ref }} # `ref` is set at inji's CLI
-
-{% if distribution == 'centos' %}        # Conditional execution
-RUN yum -y update && yum clean all
-{% endif %}
-
-{% if distribution == 'debian' %}
-RUN apt update -qq && apt upgrade -y
-{% endif %}
-
-{% if distribution == 'fedora' %}
-RUN dnf -y update && dnf clean all
-{% endif %}
-
-RUN my-awesome-build-script {{ distribution }} {{ version }}
-
-ENTRYPOINT ["/opt/bin/myserv"]
 ```
 
 ##### Render a template using variables from multiple vars files
@@ -119,24 +131,65 @@ inji --template=nginx.conf.j2    \
       --vars-file=prod.yaml  > /etc/nginx/sites-enabled/prod-eu-west-1.conf
 ```
 
-This is especially useful in managing layered configuration.
-i.e. variables from files specified later on the command-line
-will be overlain over those defined earlier.
+Here, variables from files specified later on the command-line
+will override those from files specified before
+(prod.yaml supercedes eu-west-1.yaml, etc).
+
+This is especially useful in managing layered configuration where different
+tiers of a deployment enforce/provide different parameters.
+
+##### Using directory overlays
+
+An inevitable practice is using multiple smaller configuration files
+to avoid the growing pains of huge configuration files,
+to source configuration from different sources,
+improve churn, reduce friction, etc, etc, etc.
+Here, explicitly naming configuration files for inji to use becomes
+a new pain point.
+
+With overlay directories, inji naively reads in all yaml files from a directory
+and compiles a combined configuration object before using that in rendering
+a template.
+
+```
+$ tree conf/
+conf/
+├── dev
+│   ├── service-discovery.yaml
+│   ├── load-balancer-ip.yaml
+│   ├── modules.yaml
+│   └── sites.yaml
+├── prod
+│   ├── service-discovery.yaml
+│   ├── load-balancer-ip.yaml
+│   ├── modules.yaml
+│   └── sites.yaml
+└── stage
+    ├── service-discovery.yaml
+    ├── load-balancer-ip.yaml
+    ├── modules.yaml
+    └── sites.yaml
+3 directories, 9 files
+
+$ inji  --template=nginx.conf.j2 \  # here $CI_ENV is be some variable your CI system
+        --overlay="conf/$CI_ENV" \  # sets holding the name of the target deployment
+        > nginx.conf                # e.g. dev, stage, prod
+```
 
 ### Etymology
 
 _inji_ is named in keeping of the UNIX tradition of short (memorable?)
- command names.
+ command names. In this case, it is a 4-letter near-anagram of _Jinja_.
 
-_inji_ (_/ɪndʒi:/_) also happens to be the Tamil word for Ginger.
-In this case, it is a near-anagram of _Jinja_ which ostensibly is a homophone
-of Ginger (Zingiber).
+[_inji_](https://en.wikipedia.org/wiki/Ginger#Etymology) (_/ɪndʒi:/_)
+also happens to be the Dravidian word and ostensibly the source of the
+English word Ginger, of which jinja is a partial homophone.
 
-### Example
+### Fuller Example
 
 This is a very contrived example showing how to orient a `.gitlab-ci.yml`
-towards business workflows - in this case a 3-stage Gitlab CI/CD deployment
-pipeline to production.
+towards business workflows -
+a multi-stage CI/CD deployment pipeline expedited by Gitlab.
 
 ```
 $ cat .gitlab-ci.yml.vars
@@ -148,6 +201,8 @@ project:
 
 deployer:
   image: snowmobile-deployer:latest
+
+# This serves as a more succinct business abstract
 
 environments:
 
