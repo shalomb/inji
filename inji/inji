@@ -15,6 +15,7 @@ from jinja2 import DebugUndefined, StrictUndefined, Undefined, make_logging_unde
 from jinja2 import Environment, FileSystemLoader
 from jinja2.exceptions import TemplateNotFound, UndefinedError
 import json
+import locale
 import logging
 import os
 from os.path import abspath, basename, dirname, exists, expandvars, isdir, isfile, join
@@ -168,7 +169,10 @@ if __name__ == '__main__':
   for d in args.overlay:
     files = list(recursive_iglob(d, '*.y*ml'))
     if len(files):
-      files.sort()  # We force a sensible sort collation of files
+      loc = locale.getlocale()
+      locale.setlocale(locale.LC_ALL, 'C') # Using LC_ALL=C POSIX locale
+      files.sort()                         # We force the sort collation of files
+      locale.setlocale(locale.LC_ALL, loc) # And then reset it back
       vars_files += files
 
   # in_vars from named vars files - p3
