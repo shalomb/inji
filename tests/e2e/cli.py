@@ -117,7 +117,7 @@ class TestInjiCmd(unittest.TestCase):
         msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
         raise EmptyJSONConfigArgs(msg) from exc
     e = str(e_info)
-    assert re.search('Config args string is empty', e)
+    assert re.search('JSON config args string is empty', e)
     assert "exit_code:1 " in e
 
   def test_12factor_config_sourcing(self):
