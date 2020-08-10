@@ -158,25 +158,31 @@ if __name__ == '__main__':
 
   args = cli_args()
 
-  # in_vars in the local configuration files - precendence 5
-  config_files = fnmatch.filter(os.listdir('.'), "*inji.y*ml")
+  # this holds all the possible vars files we are told about or imply
+  vars_files = []
 
-  # in_vars in the overlay directories - precendence 4
-  args.overlay = list( f for d in args.overlay
-                          for f in recursive_iglob(d, '*.y*ml') )
+  # in_vars in the local configuration files - p5
+  vars_files += fnmatch.filter(os.listdir('.'), "*inji.y*ml")
+
+  # in_vars in the overlay directories - p4
+  for d in args.overlay:
+    files = list(recursive_iglob(d, '*.y*ml'))
+    if len(files):
+      files.sort()  # We force a sensible sort collation of files
+      vars_files += files
+
+  # in_vars from named vars files - p3
+  vars_files += args.vars_file
 
   # This will hold the final vars dict merged from various available sources
   in_vars = {}
-
-  for file in [ *config_files,
-                *args.overlay,
-                *args.vars_file ]:
+  for file in vars_files:
     in_vars.update(read_in_vars(file))
 
-  # in_vars from environment variables - precedence 3
+  # in_vars from environment variables - p2
   in_vars.update(os.environ)
 
-  # in_vars at the command line - precedence 2
+  # in_vars at the command line - p1
   if args.json_config == '':
     raise TypeError("JSON config args string is empty")
 
