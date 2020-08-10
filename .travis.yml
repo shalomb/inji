@@ -1,0 +1,27 @@
+---
+
+language: python
+
+python:
+  - 3.6
+  - 3.7
+  - 3.8
+
+cache:
+  pip: true
+  directories:
+    - $HOME/.cache/pip
+    - venv/
+
+before_script:
+  - make clean
+  - make venv-deps venv
+  - make test-deps
+
+script:
+  - make test
+  - make test-cov
+
+after_success:
+  - pip install -U coveralls
+  - coveralls

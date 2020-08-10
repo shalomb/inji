@@ -15,6 +15,7 @@ from jinja2 import DebugUndefined, StrictUndefined, Undefined, make_logging_unde
 from jinja2 import Environment, FileSystemLoader
 from jinja2.exceptions import TemplateNotFound, UndefinedError
 import json
+import locale
 import logging
 import os
 from os.path import abspath, basename, dirname, exists, expandvars, isdir, isfile, join
@@ -127,19 +128,19 @@ def cli_args():
   parser.add_argument('-c', '--config', '-j', '--json',
     action = 'store', required=False,
     type=lambda x: json.loads(x) if len(x) > 2 else '',
-    dest='config',
+    dest='json_config',
     help='-c "{var1:\"blah\", var2:\"blah\"}"'
   )
 
   parser.add_argument('-o', '--overlay', '--overlay-dir',
     action = 'append', required=False, type=lambda p, t='dir': path(p, t),
-    dest='overlays', default=[],
+    dest='overlay', default=[],
     help='/path/to/overlay/'
   )
 
   parser.add_argument('-v', '-p', '--vars-file', '--vars',
     action = 'append', required=False, type=lambda p, t='file': path(p, t),
-    dest='in_vars_files', default=[],
+    dest='vars_file', default=[],
     help='/path/to/vars.yaml'
   )
 
@@ -158,30 +159,39 @@ if __name__ == '__main__':
 
   args = cli_args()
 
-  # in_vars in the local configuration files - precendence 5
-  config_files = fnmatch.filter(os.listdir('.'), "*inji.y*ml")
+  # this holds all the possible vars files we are told about or imply
+  vars_files = []
 
-  # in_vars in the overlay directories - precendence 4
-  args.overlays = list( f for d in args.overlays
-                          for f in recursive_iglob(d, '*.y*ml') )
+  # in_vars in the local configuration files - p5
+  vars_files += fnmatch.filter(os.listdir('.'), "*inji.y*ml")
+
+  # in_vars in the overlay directories - p4
+  for d in args.overlay:
+    files = list(recursive_iglob(d, '*.y*ml'))
+    if len(files):
+      loc = locale.getlocale()
+      locale.setlocale(locale.LC_ALL, 'C') # Using LC_ALL=C POSIX locale
+      files.sort()                         # We force the sort collation of files
+      locale.setlocale(locale.LC_ALL, loc) # And then reset it back
+      vars_files += files
+
+  # in_vars from named vars files - p3
+  vars_files += args.vars_file
 
   # This will hold the final vars dict merged from various available sources
   in_vars = {}
-
-  for file in [ *config_files,
-                *args.overlays,
-                *args.in_vars_files ]:
+  for file in vars_files:
     in_vars.update(read_in_vars(file))
 
-  # in_vars from environment variables - precedence 3
+  # in_vars from environment variables - p2
   in_vars.update(os.environ)
 
-  # in_vars at the command line - precedence 2
-  if args.config == '':
-    raise TypeError("Config args string is empty")
+  # in_vars at the command line - p1
+  if args.json_config == '':
+    raise TypeError("JSON config args string is empty")
 
-  if args.config:
-    in_vars.update(args.config)
+  if args.json_config:
+    in_vars.update(args.json_config)
 
   if args.template == '-':
     # Template passed in via stdin. Create template as a tempfile and use it

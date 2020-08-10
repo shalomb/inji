@@ -7,14 +7,15 @@ THIS_MAKEFILE := $(realpath $(lastword $(MAKEFILE_LIST)))
 THIS_DIR      := $(shell dirname $(THIS_MAKEFILE))
 THIS_PROJECT  := $(shell basename $(THIS_DIR))
 
-package   = $(THIS_PROJECT)
 bin       = venv/bin
-python    = $(bin)/python
+git       = $(shell which git)
+package   = $(THIS_PROJECT)
 pip       = $(bin)/pip3 --disable-pip-version-check
 pytest    = $(bin)/pytest -ra -rxXs --color=auto --full-trace -vvv --tb=short -W ignore::DeprecationWarning --showlocals
-setup     = $(python) ./setup.py
+python    = $(bin)/python
 script    = $(package)/$(package)
-git       = $(shell which git)
+setup     = $(python) ./setup.py
+twine     = $(bin)/twine
 
 .PHONY: all clean requirements.txt venv version
 
@@ -44,18 +45,22 @@ show: ## Show the version installed by pip
 run: ## Run the installable
 	@  $(python) $(script) -h
 
-package: version ## Build and validate the wheels ready for a PyPi release
-	@ $(setup) install sdist bdist_wheel
+build: package
+	@ :
+
+package: test-cov version ## Build and validate the wheels ready for a PyPi release
+	@ $(setup) install bdist_wheel sdist
 	@ $(pip) install twine
-	@ twine check dist/*
+	@ $(twine) check dist/*
 
 release: package ## Upload wheels to PyPi to mark a new release
-	@ twine upload --skip-existing dist/*
+	@ $(twine) upload --skip-existing dist/*
 
 clean: ## Wipe the  workspace clean
 	@ test -e "$(git)" && $(git) checkout requirements.txt || true
+	@ test -e "$(git)" && $(git) checkout version || true
 	@ ./setup.py clean --all --verbose
-	@ rm -frv .coverage dist/ build/ *.egg-info/ venv/ .*.sw? test*.tap || true
+	@ rm -frv .coverage dist/ build/ *.egg-info/ .*.sw? test*.tap || true
 	@ find . -depth -type d -iname __pycache__ -exec rm -frv {} +
 
 venv-deps: ## Install virtualenv
@@ -65,7 +70,7 @@ venv: $(pip) requirements.txt ## Create the workspace with test frameworks
 	@ $(pip) install --upgrade pip setuptools wheel pytest pytest-tap pytest-cov
 
 $(pip): venv-deps ## Install pip
-	@ test -d venv || virtualenv venv/
+	@ test -d venv/bin || virtualenv venv/
 	@ $(pip) install --upgrade pip setuptools wheel
 
 requirements.txt: ## Create requirements.txt from setup.py
@@ -95,15 +100,16 @@ test: ## Run pytest tests (argument narrows down by name)
 
 test-cov: ## Run coverage tests
 	@ rm -f .coverage
-	@ $(pytest) \
-		--cov-append \
-		--cov-report term \
-		--cov-report=term-missing \
-		--cov-fail-under=96 \
-		--cov inji/ tests/
+	@ sh -c '. venv/bin/activate; \
+						$(pytest) \
+							--cov-append \
+							--cov-report term \
+							--cov-report=term-missing \
+							--cov-fail-under=100 \
+							--cov $$PWD/inji/ tests/**/*'
 
 test-durations: ## Run tests and report durations
-	@ $(pytest) tests/ -vvvv --durations=0
+	@ $(pytest) tests/**/* -vvvv --durations=0
 
 %: ## Fallback to nothing
 	@:
