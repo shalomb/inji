@@ -104,8 +104,8 @@ test-cov: ## Run coverage tests
 		--cov-append \
 		--cov-report term \
 		--cov-report=term-missing \
-		--cov-fail-under=96 \
-		--cov inji/ tests/*/*
+		--cov-fail-under=100 \
+		--cov $$PWD/inji/ tests/**/*
 
 test-durations: ## Run tests and report durations
 	@ $(pytest) tests/**/* -vvvv --durations=0
