@@ -336,5 +336,8 @@ English word Ginger, of which jinja is a partial homophone.
 
 ### TODO
 
-[ ] Manage collections of templates e.g. `*.j2`
-[ ] Dry-run syntax checking
+Only potential ideas so far - No commitment is made.
+
+* [ ] Read config from JSON/TOML files?
+* [ ] Manage collections of templates e.g. `*.j2`
+* [ ] Dry-run syntax checking
