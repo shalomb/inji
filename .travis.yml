@@ -13,7 +13,7 @@ cache:
     - $HOME/.cache/pip
     - venv/
 
-install:
+before_script:
   - make clean
   - make venv-deps venv
   - make test-deps
