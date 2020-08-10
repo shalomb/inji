@@ -36,39 +36,78 @@ and can hold either simple
 [scalars](https://yaml.org/spec/1.2/spec.html#id2760844)
 or
 [collections](https://yaml.org/spec/1.2/spec.html#id2759963).
-Your jinja templates must reference these accordingly.
+Your jinja templates then reference these accordingly.
 
 e.g.
-```
-$ cat vars.yaml
-sage: victor
-section: indigo
 
-envoy:
-  names:
-    - alice
-    - bob
-    - chuck
-  location: metaverse
-  origin: world's end
-```
+Building multiple docker image variants from a single template
 
 ```
-$ cat hello-world.j2
-Hello {{ envoy.names | join(', ') }}!!
+$ cat .travis.yml
+---
+language: python
+sudo: required
+services:
+  - docker
 
-I am {{ sage }}, the {{ section }} sage.
+env:
 
-It seems you are at {{ envoy.location }} today and come from {{ envoy.origin }}.
+  - distribution: centos
+    version: 7
+
+  - distribution: centos
+    version: 8
+
+  - distribution: debian
+    version: stretch
+
+  - distribution: debian
+    version: buster
+
+  - distribution: fedora
+    version: 28
+
+  - distribution: fedora
+    version: 29
+
+before_script:
+  - pip install inji
+
+script:
+  - inji -t Dockerfile.j2 -c '{"ref": "'"${CI_COMMIT_REF_NAME:-unknown}"'"}' > Dockerfile
+  - docker build -t "myimage:$distribution-$version" .
+  - docker push --all-tags "myimage"
+...
 ```
 
+Where the `Dockerfile.j2` template is something like
+
 ```
-$ inji -t hello-world.j2 -v vars.yaml
-Hello alice, bob, chuck!!
+$ cat Dockerfile.j2
+FROM {{ distribution }}:{{ version }}    # These jinja2 vars are set by inji
+                                         # from travis' environment variables
 
-I am victor, the indigo sage.
+MAINTAINER http://my.org/PlatformOps
 
-It seems you are at metaverse today and come from world's end.
+ENV container       docker
+ENV distribution {{ distribution }}
+ENV version      {{ version }}-{{ ref }} # `ref` is set at inji's CLI
+
+{% if distribution == 'centos' %}        # Conditional execution
+RUN yum -y update && yum clean all
+{% endif %}
+
+{% if distribution == 'debian' %}
+RUN apt update -qq && apt upgrade -y
+{% endif %}
+
+{% if distribution == 'fedora' %}
+RUN dnf -y update && dnf clean all
+{% endif %}
+
+RUN my-awesome-build-script {{ distribution }} {{ version }}
+
+ENTRYPOINT ["/opt/bin/myserv"]
 ```
 
 ##### Render a template using variables from multiple vars files
