@@ -1,3 +1,18 @@
+0.4.0 2020-08-10T23:38:21
+-------------------------
+
+* Fix bug with filename sort collation not being guaranteed.
+  We now explicitly sort filenames under the C POSIX locale.
+  Users should still consider using a file naming convention for ensuring
+  filenames are collated to their expectations
+  e.g. prefixing filenames with numbers
+* Deprecate support for <= python 3.5
+* Setup CI testing under Travis CI.
+  Fix various small issues in Makefiles, coverage reporting.
+* Report build and coverage status
+* Improve CLI help messaging
+* Improve repo README.md examples and layout
+
 0.3.0 2020-08-06T01:46:57
 -------------------------
 
