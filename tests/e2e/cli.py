@@ -48,23 +48,6 @@ def file_from_text(*args, **kwargs):
 
   return abspath(filename)
 
-def dump(obj):
-
-    def pretty(obj):
-        j = json.dumps( obj, sort_keys=True, indent=2,
-                    separators=(', ', ': ') )
-        try:
-            from pygments import highlight, lexers, formatters
-            return highlight( j,
-                    lexers.JsonLexer(), formatters.TerminalFormatter() )
-        except ImportError as e:
-            return j
-
-    try:
-        return pretty(obj)
-    except TypeError as e:
-        return pretty(obj.__dict__)
-
 class TestFixtureHelloWorld(unittest.TestCase):
 
   def test_hello_world(self):
