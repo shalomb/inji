@@ -1,3 +1,11 @@
+0.4.0 2020-08-15T13:49:17
+-------------------------
+
+* Setup project under scrutinizer-ci for code quality in CI
+* Fix duplicated code in tests
+* Improve test titling, commentary
+* Improve README.md
+
 0.4.0 2020-08-10T23:38:21
 -------------------------
 
