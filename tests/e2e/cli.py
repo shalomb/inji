@@ -318,8 +318,13 @@ class TestInjiCmd(unittest.TestCase):
                 '-v', varsfile2
       )
 
-  def test_template_render_with_empty_varsfile(self):
-    """ Empty varsfile should blow up in strict mode """
+  def test_error_with_empty_varsfile(self):
+    """ An empty vars file is an error, we ought to fail early """
+    """
+    There may be a case for allowing this to just be a warning and so
+    we may change this behaviour in the future. For now, it definitely
+    is something we should fail-early on.
+    """
     class EmptyVarsFileException(Exception): pass
     with pytest.raises(EmptyVarsFileException) as e_info:
       try:
@@ -335,15 +340,15 @@ class TestInjiCmd(unittest.TestCase):
     assert re.search('TypeError: .* contains no data', e)
     assert "exit_code:1 " in e
 
-  def test_template_render_with_malformed_varsfile(self):
-    """ Malformed varsfile should blow up in strict mode """
+  def test_error_with_malformed_varsfile(self):
+    """ An invalid varsfile is a fail-early error """
     class MalformedVarsFileException(Exception): pass
     with pytest.raises(MalformedVarsFileException) as e_info:
       try:
         varsfile = file_from_text('@')
-        check_output( inji, '-v', varsfile, '-s', 'strict',
+        check_output( inji, '-v', varsfile,
                       input=b"Hola {{ foo }}, Hello {{ bar }}",
-                      stderr=subprocess.STDOUT,
+                      stderr=subprocess.STDOUT
         )
       except subprocess.CalledProcessError as exc:
         msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
