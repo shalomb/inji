@@ -127,7 +127,7 @@ def cli_args():
 
   parser.add_argument('-c', '--config', '-j', '--json',
     action = 'store', required=False,
-    type=lambda x: json.loads(x) if len(x) > 2 else '',
+    type=lambda x: json.loads(x),
     dest='json_config',
     help='-c "{var1:\"blah\", var2:\"blah\"}"'
   )
