@@ -3,6 +3,7 @@
 # -*- coding: utf-8 -*-
 
 import atexit
+import json
 import os
 from   os.path import abspath, dirname, join
 import pytest
