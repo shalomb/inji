@@ -264,8 +264,11 @@ class TestInjiCmd(unittest.TestCase):
       check_output( inji, '-t', template )
     os.environ.pop('foo')
 
-  def test_template_file_render(self):
-    """Template files should render"""
+  def test_template_render_with_internal_vars(self):
+    """
+    Jinja template should render correctly
+    referencing those variables set in the templates themselves
+    """
     template = file_from_text("{% set foo='world!' %}Hola {{ foo }}")
     assert 'Hola world!\n' == \
       check_output( inji, '-t', template )
