@@ -286,15 +286,15 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_template_directory(self):
     """ Using a directory as a template source should cause an error"""
-    class TemplateFileMissingException(Exception): pass
-    with pytest.raises(TemplateFileMissingException) as e_info:
+    class TemplateAsDirectoryException(Exception): pass
+    with pytest.raises(TemplateAsDirectoryException) as e_info:
       try:
         check_output( inji, '-t', '/',
                       stderr=subprocess.STDOUT,
         )
       except subprocess.CalledProcessError as exc:
         msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
-        raise TemplateFileMissingException(msg) from exc
+        raise TemplateAsDirectoryException(msg) from exc
     e = str(e_info)
     assert "exit_code:2 " in e
     assert re.search('/.. is not a file', e)
@@ -340,9 +340,9 @@ class TestInjiCmd(unittest.TestCase):
     class MalformedVarsFileException(Exception): pass
     with pytest.raises(MalformedVarsFileException) as e_info:
       try:
-        template = file_from_text("Hola {{ foo }}, Hello {{ bar }}")
         varsfile = file_from_text('@')
-        check_output( inji, '-t', template, '-v', varsfile, '-s', 'strict',
+        check_output( inji, '-v', varsfile, '-s', 'strict',
+                      input=b"Hola {{ foo }}, Hello {{ bar }}",
                       stderr=subprocess.STDOUT,
         )
       except subprocess.CalledProcessError as exc:
