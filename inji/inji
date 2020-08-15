@@ -127,7 +127,7 @@ def cli_args():
 
   parser.add_argument('-c', '--config', '-j', '--json',
     action = 'store', required=False,
-    type=lambda x: json.loads(x) if len(x) > 2 else '',
+    type=lambda x: json.loads(x),
     dest='json_config',
     help='-c "{var1:\"blah\", var2:\"blah\"}"'
   )
@@ -187,9 +187,6 @@ if __name__ == '__main__':
   in_vars.update(os.environ)
 
   # in_vars at the command line - p1
-  if args.json_config == '':
-    raise TypeError("JSON config args string is empty")
-
   if args.json_config:
     in_vars.update(args.json_config)
 

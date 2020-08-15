@@ -3,6 +3,7 @@
 # -*- coding: utf-8 -*-
 
 import atexit
+import json
 import os
 from   os.path import abspath, dirname, join
 import pytest
@@ -47,23 +48,6 @@ def file_from_text(*args, **kwargs):
 
   return abspath(filename)
 
-def dump(obj):
-
-    def pretty(obj):
-        j = json.dumps( obj, sort_keys=True, indent=2,
-                    separators=(', ', ': ') )
-        try:
-            from pygments import highlight, lexers, formatters
-            return highlight( j,
-                    lexers.JsonLexer(), formatters.TerminalFormatter() )
-        except ImportError as e:
-            return j
-
-    try:
-        return pretty(obj)
-    except TypeError as e:
-        return pretty(obj.__dict__)
-
 class TestFixtureHelloWorld(unittest.TestCase):
 
   def test_hello_world(self):
@@ -105,20 +89,22 @@ class TestInjiCmd(unittest.TestCase):
           input=b"Hola {{ foo }}"
       )
 
-  def test_empty_json_config_args(self):
+  def test_invalid_json_config_args(self):
     """Empty json config args should cause an error"""
-    class EmptyJSONConfigArgs(Exception): pass
-    with pytest.raises(EmptyJSONConfigArgs) as e_info:
-      try:
-        check_output( inji, '-c', '',
-                      stderr=subprocess.STDOUT,
-        )
-      except subprocess.CalledProcessError as exc:
-        msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
-        raise EmptyJSONConfigArgs(msg) from exc
-    e = str(e_info)
-    assert re.search('JSON config args string is empty', e)
-    assert "exit_code:1 " in e
+    class InvalidLambdaException(Exception): pass
+    input_cases = [ '', '}{', '{@}', '{"foo": tru}' ] # invalid JSON inputs
+    for cfg in input_cases:
+      with pytest.raises(InvalidLambdaException) as e_info:
+        try:
+          check_output( inji, '-c', '',
+                        stderr=subprocess.STDOUT,
+          )
+        except subprocess.CalledProcessError as exc:
+          msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
+          raise InvalidLambdaException(msg) from exc
+      e = str(e_info)
+      assert re.search("--json: invalid <lambda> value: ", e)
+      assert "exit_code:2 " in e
 
   def test_12factor_config_sourcing(self):
     """Test config sourcing precendence should adhere to 12-factor app expectations"""
@@ -261,9 +247,13 @@ class TestInjiCmd(unittest.TestCase):
     os.environ['foo'] = 'world!'
     assert 'Hola world!\n' == \
       check_output( inji, '-t', template )
+    os.environ.pop('foo')
 
-  def test_template_file_render(self):
-    """Template files should render"""
+  def test_template_render_with_internal_vars(self):
+    """
+    Jinja template should render correctly
+    referencing those variables set in the templates themselves
+    """
     template = file_from_text("{% set foo='world!' %}Hola {{ foo }}")
     assert 'Hola world!\n' == \
       check_output( inji, '-t', template )
@@ -285,15 +275,15 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_template_directory(self):
     """ Using a directory as a template source should cause an error"""
-    class TemplateFileMissingException(Exception): pass
-    with pytest.raises(TemplateFileMissingException) as e_info:
+    class TemplateAsDirectoryException(Exception): pass
+    with pytest.raises(TemplateAsDirectoryException) as e_info:
       try:
         check_output( inji, '-t', '/',
                       stderr=subprocess.STDOUT,
         )
       except subprocess.CalledProcessError as exc:
         msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
-        raise TemplateFileMissingException(msg) from exc
+        raise TemplateAsDirectoryException(msg) from exc
     e = str(e_info)
     assert "exit_code:2 " in e
     assert re.search('/.. is not a file', e)
@@ -317,8 +307,13 @@ class TestInjiCmd(unittest.TestCase):
                 '-v', varsfile2
       )
 
-  def test_template_render_with_empty_varsfile(self):
-    """ Empty varsfile should blow up in strict mode """
+  def test_error_with_empty_varsfile(self):
+    """ An empty vars file is an error, we ought to fail early """
+    """
+    There may be a case for allowing this to just be a warning and so
+    we may change this behaviour in the future. For now, it definitely
+    is something we should fail-early on.
+    """
     class EmptyVarsFileException(Exception): pass
     with pytest.raises(EmptyVarsFileException) as e_info:
       try:
@@ -334,15 +329,15 @@ class TestInjiCmd(unittest.TestCase):
     assert re.search('TypeError: .* contains no data', e)
     assert "exit_code:1 " in e
 
-  def test_template_render_with_malformed_varsfile(self):
-    """ Malformed varsfile should blow up in strict mode """
+  def test_error_with_malformed_varsfile(self):
+    """ An invalid varsfile is a fail-early error """
     class MalformedVarsFileException(Exception): pass
     with pytest.raises(MalformedVarsFileException) as e_info:
       try:
-        template = file_from_text("Hola {{ foo }}, Hello {{ bar }}")
         varsfile = file_from_text('@')
-        check_output( inji, '-t', template, '-v', varsfile, '-s', 'strict',
-                      stderr=subprocess.STDOUT,
+        check_output( inji, '-v', varsfile,
+                      input=b"Hola {{ foo }}, Hello {{ bar }}",
+                      stderr=subprocess.STDOUT
         )
       except subprocess.CalledProcessError as exc:
         msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
