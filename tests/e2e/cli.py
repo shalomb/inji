@@ -262,6 +262,7 @@ class TestInjiCmd(unittest.TestCase):
     os.environ['foo'] = 'world!'
     assert 'Hola world!\n' == \
       check_output( inji, '-t', template )
+    os.environ.pop('foo')
 
   def test_template_file_render(self):
     """Template files should render"""
