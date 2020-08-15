@@ -187,9 +187,6 @@ if __name__ == '__main__':
   in_vars.update(os.environ)
 
   # in_vars at the command line - p1
-  if args.json_config == '':
-    raise TypeError("JSON config args string is empty")
-
   if args.json_config:
     in_vars.update(args.json_config)
 
