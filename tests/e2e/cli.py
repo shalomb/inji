@@ -89,20 +89,22 @@ class TestInjiCmd(unittest.TestCase):
           input=b"Hola {{ foo }}"
       )
 
-  def test_empty_json_config_args(self):
+  def test_invalid_json_config_args(self):
     """Empty json config args should cause an error"""
-    class EmptyJSONConfigArgs(Exception): pass
-    with pytest.raises(EmptyJSONConfigArgs) as e_info:
-      try:
-        check_output( inji, '-c', '',
-                      stderr=subprocess.STDOUT,
-        )
-      except subprocess.CalledProcessError as exc:
-        msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
-        raise EmptyJSONConfigArgs(msg) from exc
-    e = str(e_info)
-    assert re.search('JSON config args string is empty', e)
-    assert "exit_code:1 " in e
+    class InvalidLambdaException(Exception): pass
+    input_cases = [ '', '}{', '{@}', '{"foo": tru}' ] # invalid JSON inputs
+    for cfg in input_cases:
+      with pytest.raises(InvalidLambdaException) as e_info:
+        try:
+          check_output( inji, '-c', '',
+                        stderr=subprocess.STDOUT,
+          )
+        except subprocess.CalledProcessError as exc:
+          msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
+          raise InvalidLambdaException(msg) from exc
+      e = str(e_info)
+      assert re.search("--json: invalid <lambda> value: ", e)
+      assert "exit_code:2 " in e
 
   def test_12factor_config_sourcing(self):
     """Test config sourcing precendence should adhere to 12-factor app expectations"""
