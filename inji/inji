@@ -71,6 +71,27 @@ def render_template(
             str(e), template) ) from e
 
 
+def json_parse(string):
+  """ Parse a JSON string into a dictionary """
+  try:
+    return json.loads(string)
+  except Exception as e:
+    msg = 'Error parsing JSON config: {}'.format(str(e))
+    print(msg, file=sys.stderr)
+    raise TypeError(msg)
+
+def kv_parse(string):
+  """ Parse a string of the form foo=bar into a dictionary """
+  try:
+    key, val = string.split('=', 1)
+    if key is None or key == '':
+      raise TypeError('Empty key')
+  except Exception as e:
+    err = "Invalid key found parsing KV string '{}': {}".format(string, str(e))
+    print(err, file=sys.stderr)
+    raise
+  return { key: val }
+
 def read_in_vars(yaml_file):
   yaml_file = yaml_file.__str__()
   with open(yaml_file, 'r') as f:
@@ -125,16 +146,23 @@ def cli_args():
     help='/path/to/template.j2 (defaults to -)'
   )
 
-  parser.add_argument('-c', '--config', '-j', '--json',
+  parser.add_argument('-j', '--json-config', '-c',
     action = 'store', required=False,
-    type=lambda x: json.loads(x),
-    dest='json_config',
-    help='-c "{var1:\"blah\", var2:\"blah\"}"'
+    type=lambda x: json_parse(x),
+    dest='json_string',
+    help="-c '{ \"foo\": \"bar\", \"fred\": \"wilma\" }'"
   )
 
-  parser.add_argument('-o', '--overlay', '--overlay-dir',
+  parser.add_argument('-k', '--kv-config', '-d',
+    action = 'store', required=False,
+    type=lambda x: kv_parse(x),
+    dest='kv_pair',
+    help='-d foo=bar -d fred=wilma'
+  )
+
+  parser.add_argument('-o', '--overlay-dir',
     action = 'append', required=False, type=lambda p, t='dir': path(p, t),
-    dest='overlay', default=[],
+    dest='overlay_dir', default=[],
     help='/path/to/overlay/'
   )
 
@@ -166,7 +194,7 @@ if __name__ == '__main__':
   vars_files += fnmatch.filter(os.listdir('.'), "*inji.y*ml")
 
   # in_vars in the overlay directories - p4
-  for d in args.overlay:
+  for d in args.overlay_dir:
     files = list(recursive_iglob(d, '*.y*ml'))
     if len(files):
       loc = locale.getlocale()
@@ -186,9 +214,12 @@ if __name__ == '__main__':
   # in_vars from environment variables - p2
   in_vars.update(os.environ)
 
-  # in_vars at the command line - p1
-  if args.json_config:
-    in_vars.update(args.json_config)
+  # in_vars at the command line (either JSON or KV type) - p1
+  if args.json_string:
+    in_vars.update(args.json_string)
+
+  if args.kv_pair:
+    in_vars.update(args.kv_pair)
 
   if args.template == '-':
     # Template passed in via stdin. Create template as a tempfile and use it

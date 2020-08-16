@@ -32,27 +32,37 @@ $ system=$(< /etc/hostname)
 $ startime=$(date +%FT%T%z)
 
 $ echo '
-  Welcome star traveller!
-  Welcome aboard the node : {{ system }}.
-  Star time of last dock  : {{ startime }}
-  ' | inji
+node : {{ node }}
+time : {{ time }}
+' | inji -k node="$system" -k time="$startime"
 ```
 
 Or from a file
 
 ```
-$ inji --template=jello-star-motd.j2 > /etc/motd
+$ inji --template=jello-star-motd.j2 -k ... > /etc/motd
 ```
 
 ##### Render a template passing vars in a JSON object
 
+JSON allows you to pass configuration in complex/multi-dimensional objects.
+
 ```
 $ echo '
-  node : {{ node }}
-  time : {{ time }}
-  ' | inji -c '{ "node": "'$(</etc/hostname)'", "time": "'$(date)'" }'
+node : {{ node.name }}
+time : {{ node.time }}
+' > template.j2
+
+$ inji -t template.j2 -j '{
+  "node":{
+    "name":"'$(</etc/hostname)'", // Note the "interpolation" of shell commands
+    "time":"'$(date)'"            // here with the quoting.
+  }
+}'
 ```
+
 ##### Render a template passing vars from a YAML file
+
 
 ```
 inji --template=motd.j2 --vars-file=production.yaml
@@ -71,8 +81,8 @@ e.g.
 
 A typical case is building multiple docker images - without the assistance
 of a templating tool, you may have to keep and maintain several Dockerfiles
-and corresponding build commands for each image
-- but imagine the yucky prospects of maintaining that kind of
+and corresponding build commands for each image - but imagine the
+yucky prospects of maintaining that kind of
 [WET approach](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself#DRY_vs_WET_solutions).
 
 Instead, to DRY things up, consider a templated Dockerfile like this
@@ -139,9 +149,8 @@ before_script:
   - pip install inji
 
 script:
-  - json_config='{ "ref": "'"$CI_COMMIT_REF_NAME"'" }'
   - >
-    inji --template Dockerfile.j2 --config "$json_config" |
+    inji --template Dockerfile.j2 --kv-config ref="$CI_COMMIT_REF_NAME" |
       docker build --pull --tag "myimage:$distribution-$version" -
   - docker push --all-tags "myimage"
 ...
@@ -163,7 +172,7 @@ will override those from files specified before
 This is especially useful in managing layered configuration where different
 tiers of a deployment enforce/provide different parameters.
 
-##### Using directory overlays
+##### Using directory configuration overlays
 
 An inevitable practice is using multiple smaller configuration files
 to avoid the growing pains of huge configuration files,

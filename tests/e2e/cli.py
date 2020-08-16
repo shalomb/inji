@@ -85,25 +85,55 @@ class TestInjiCmd(unittest.TestCase):
     """Config passed as JSON string"""
     assert "Hola world!\n" == \
       check_output(
-        inji, '-c', '{"foo": "world!"}',
+        inji, '-j', '{"foo": "world!"}',
           input=b"Hola {{ foo }}"
       )
 
   def test_invalid_json_config_args(self):
     """Empty json config args should cause an error"""
-    class InvalidLambdaException(Exception): pass
+    class InvalidJSONConfigException(Exception): pass
     input_cases = [ '', '}{', '{@}', '{"foo": tru}' ] # invalid JSON inputs
     for cfg in input_cases:
-      with pytest.raises(InvalidLambdaException) as e_info:
+      with pytest.raises(InvalidJSONConfigException) as e_info:
         try:
-          check_output( inji, '-c', '',
+          check_output( inji, '-j', cfg,
                         stderr=subprocess.STDOUT,
           )
         except subprocess.CalledProcessError as exc:
           msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
-          raise InvalidLambdaException(msg) from exc
+          raise InvalidJSONConfigException(msg) from exc
       e = str(e_info)
-      assert re.search("--json: invalid <lambda> value: ", e)
+      assert re.search("Error parsing JSON config:", e)
+      assert "exit_code:2 " in e
+
+  def test_kv_config_args(self):
+    """ Config passed as KV strings """
+    assert check_output(
+        inji,
+          '-k', 'foo=bar',
+          '-k', 'foo=world!',  # valid, last declaration wins
+          input=b"Hola {{ foo }}"
+      ) == "Hola world!\n"
+    assert check_output(
+        inji, '-k', 'foo=',    # valid, sets foo to be empty
+          input=b"Hola {{ foo }}"
+      ) ==  "Hola \n"
+
+  def test_invalid_kv_config_args(self):
+    """Invalid KV config args should cause an error"""
+    class InvalidKVConfigException(Exception): pass
+    input_cases = [ '', '=', '=baz' ] # invalid KV inputs
+    for cfg in input_cases:
+      with pytest.raises(InvalidKVConfigException) as e_info:
+        try:
+          check_output( inji, '-d', cfg,
+                        stderr=subprocess.STDOUT,
+          )
+        except subprocess.CalledProcessError as exc:
+          msg = 'exit_code:{} output:{}'.format(exc.returncode, exc.output)
+          raise InvalidKVConfigException(msg) from exc
+      e = str(e_info)
+      assert re.search("Invalid key found parsing", e)
       assert "exit_code:2 " in e
 
   def test_12factor_config_sourcing(self):
