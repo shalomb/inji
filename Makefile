@@ -67,7 +67,8 @@ venv-deps: ## Install virtualenv
 	@ pip install --upgrade setuptools wheel virtualenv
 
 venv: $(pip) requirements.txt ## Create the workspace with test frameworks
-	@ $(pip) install --upgrade pip setuptools wheel pytest pytest-tap pytest-cov
+	@ $(pip) install --upgrade \
+		coverage pytest pytest-cov pytest-tap
 
 $(pip): venv-deps ## Install pip
 	@ test -d venv/bin || virtualenv venv/
