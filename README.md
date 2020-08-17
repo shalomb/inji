@@ -211,6 +211,20 @@ $ inji  --template=nginx.conf.j2 \  # here $CI_ENV is be some variable your CI s
         > nginx.conf                # e.g. dev, stage, prod
 ```
 
+### Parameter sourcing and precedence order
+
+Parameters can be specified and sourced from multiple places.
+The order of parameters sourced and their precedence is 12-factor friendly
+and is done as set out here (from lowest-to-highest precedence).
+
+- Default configuration file (`.inji.y*ml` or `inji.y*ml`) in current directory.
+- Overlay directories - last file sorted alphabetically wins
+- Named configuration file - last one specified wins
+- Environmental variables - last one specified wins
+- CLI JSON strings - last one specified wins
+- CLI KV strings - last one specified wins
+- Template parameters - last one specified wins (Jinja2 order)
+
 ### Fuller Example
 
 This is a very contrived example showing how to orient a `.gitlab-ci.yml`

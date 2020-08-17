@@ -145,12 +145,12 @@ class TestInjiCmd(unittest.TestCase):
         f"zar: zella\nzoo: zorg",
         dir=tmpdir, name='vars.yaml' )
 
-    # needed to source lowest precedence config from ./inji.y?ml
+    # needed to source the default config from ./inji.y?ml
     OLDPWD=os.getcwd()
     os.chdir(tmpdir)
 
     # test we are able to recursively source params
-    # but also source from the p5 config file relative to PWD
+    # but also source from the default (low-precedence) config file relative to PWD
     assert re.search('Hola \w+ from bella',
       check_output(
         inji,
@@ -174,7 +174,6 @@ class TestInjiCmd(unittest.TestCase):
           input=b"Hola {{ item }}"
       ) == "Hola prod\n"
 
-    # precedence 4
     # named config file trumps overlays, arg position is irrelevant
     assert check_output(
         inji,
@@ -185,7 +184,6 @@ class TestInjiCmd(unittest.TestCase):
           input=b"Hola {{ zar }} from {{ zoo }}"
       ) == "Hola zella from zorg\n"
 
-    # precedence 3
     # env vars trump named config files
     os.environ['zoo']='env'
     assert check_output(
@@ -197,24 +195,38 @@ class TestInjiCmd(unittest.TestCase):
           input=b"Hola {{ zar }} from {{ zoo }}"
       ) == "Hola zella from env\n"
 
-    # precedence 2
-    # cli params passed in as JSON take ultimate precendence
+    # cli params passed in as JSON strings at the CLI trump all files
     assert check_output(
         inji,
           '-o', f"{tmpdir}/stage",
-          '-c', '{"zoo": "world!"}',
+          '-j', '{"zoo": "world!"}',
           '-o', f"{tmpdir}/prod",
           '-v', param_file,
           '-o', f"{tmpdir}/dev",
           input=b"Hola {{ zar }} from {{ zoo }}"
       ) == "Hola zella from world!\n"
 
-    # precedence 1
+    # cli params passed in as KV pairs take ultimate precendence
+    # Q: why do KV pairs take precendece over JSON?
+    # A: the use-case is overriding particular values from a JSON blurb sourced
+    #    from a file or external system.
+    assert check_output(
+        inji,
+          '-k', 'zar=della',
+          '-o', f"{tmpdir}/stage",
+          '-j', '{"zoo": "world!"}',
+          '-o', f"{tmpdir}/prod",
+          '-v', param_file,
+          '-o', f"{tmpdir}/dev",
+          input=b"Hola {{ zar }} from {{ zoo }}"
+      ) == "Hola della from world!\n"
+
     # except when params are defined in the templates themselves, off course!
     assert check_output(
         inji,
+          '-k', 'zar=della',
           '-o', f"{tmpdir}/stage",
-          '-c', '{"zoo": "mars"}',
+          '-j', '{"zoo": "mars"}',
           '-o', f"{tmpdir}/prod",
           '-v', param_file,
           '-o', f"{tmpdir}/dev",
