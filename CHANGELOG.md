@@ -1,3 +1,11 @@
+0.5.0 2020-08-17T15:06:12
+-------------------------
+
+* Setup project under scrutinizer-ci for CI testing and code quality
+  Fix minor issues and bugs
+* Add support for passing in KV pairs at the CLI
+* Add documentation on parameter precedence and other minor edits to README.md
+
 0.4.0 2020-08-15T13:49:17
 -------------------------
 

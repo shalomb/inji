@@ -67,7 +67,8 @@ venv-deps: ## Install virtualenv
 	@ pip install --upgrade setuptools wheel virtualenv
 
 venv: $(pip) requirements.txt ## Create the workspace with test frameworks
-	@ $(pip) install --upgrade pip setuptools wheel pytest pytest-tap pytest-cov
+	@ $(pip) install --upgrade \
+		coverage pytest pytest-cov pytest-tap
 
 $(pip): venv-deps ## Install pip
 	@ test -d venv/bin || virtualenv venv/
@@ -84,7 +85,7 @@ uninstall: ## Uninstall the package
 version: ## Derive new version number for a bump
 ifndef CI_BUILD_REF_NAME
 	$(warning CI_BUILD_REF_NAME is not set, are we running under gitlab CI?)
-	@ $(git) describe --tags > version
+	@ $(git) describe --tags --always > version
 else
 	@ echo "$$CI_BUILD_REF_NAME" > version
 endif

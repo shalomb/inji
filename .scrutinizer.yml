@@ -1,0 +1,47 @@
+---
+
+# Scrutinizer CI settings for
+# https://scrutinizer-ci.com/g/shalomb/inji/
+
+checks:
+  python:
+    code_rating: true
+    duplicate_code: true
+
+build:
+  environment:
+    python:
+      virtualenv: true
+  dependencies:
+    override:
+      - pip install --upgrade pip coverage
+      - make venv-deps venv test-deps
+  tests:
+    override:
+      - bash -c 'source venv/bin/activate; make test-durations'
+  nodes:
+    tests: true
+    analysis:
+      project_setup:
+        override:
+          - 'true'
+      tests:
+        override:
+          - py-scrutinizer-run
+          - command: pylint-run
+            use_website_config: false
+    coverage:
+      tests:
+        override:
+          - command: bash -c 'source venv/bin/activate; make test-cov'
+            coverage:
+              file: '.coverage'
+              config_file: '.coveragerc'
+              format: 'py-cc'
+
+filter:
+  excluded_paths:
+    - '*/test/*'
+    - '*/tests/*'
+  dependency_paths:
+    - 'lib/*'

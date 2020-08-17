@@ -1,8 +1,10 @@
 ![inji](./inji-logo.png)
 
+[![Pythons](https://img.shields.io/badge/python-3.6%E2%80%933.8%20%7C%20pypy-blue.svg)](.travis.yml)
 [![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=master)](https://travis-ci.org/shalomb/inji)
-[![Coverage Status](https://coveralls.io/repos/github/shalomb/inji/badge.svg)](https://coveralls.io/github/shalomb/inji)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/shalomb/inji/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
+[![Code Intelligence Status](https://scrutinizer-ci.com/g/shalomb/inji/badges/code-intelligence.svg?b=master)](https://scrutinizer-ci.com/code-intelligence)
 
 Inji renders static
 [jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
@@ -31,46 +33,57 @@ $ system=$(< /etc/hostname)
 $ startime=$(date +%FT%T%z)
 
 $ echo '
-  Welcome star traveller!
-  Welcome aboard the node : {{ system }}.
-  Star time of last dock  : {{ startime }}
-  ' | inji
+node : {{ node }}
+time : {{ time }}
+' | inji -k node="$system" -k time="$startime"
 ```
 
 Or from a file
 
 ```
-$ inji --template=jello-star-motd.j2 > /etc/motd
+$ inji --template=jello-star-motd.j2 -k ... > /etc/motd
 ```
 
 ##### Render a template passing vars in a JSON object
 
+JSON allows you to pass configuration in complex/multi-dimensional objects.
+
 ```
 $ echo '
-  node : {{ node }}
-  time : {{ time }}
-  ' | inji -c '{ "node": "'$(</etc/hostname)'", "time": "'$(date)'" }'
+node : {{ node.name }}
+time : {{ node.time }}
+' > template.j2
+
+$ inji -t template.j2 -j '{
+  "node":{
+    "name":"'$(</etc/hostname)'", // Note the "interpolation" of shell commands
+    "time":"'$(date)'"            // here with the quoting.
+  }
+}'
 ```
+
 ##### Render a template passing vars from a YAML file
+
 
 ```
 inji --template=motd.j2 --vars-file=production.yaml
 ```
 
 vars files must contain valid
-([YAML documents]https://yaml.org/spec/1.2/spec.html#id2800132)
+([YAML documents](https://yaml.org/spec/1.2/spec.html#id2800132)
 and can hold either simple
 [scalars](https://yaml.org/spec/1.2/spec.html#id2760844)
 or
 [collections](https://yaml.org/spec/1.2/spec.html#id2759963).
-Your jinja templates then reference these accordingly depending on your context.
+Your jinja templates can then reference parameters/variables inside these
+varsfiles depending on your context.
 
 e.g.
 
 A typical case is building multiple docker images - without the assistance
 of a templating tool, you may have to keep and maintain several Dockerfiles
-and corresponding build commands for each image
-- but imagine the yucky prospects of maintaining that kind of
+and corresponding build commands for each image - but imagine the
+yucky prospects of maintaining that kind of
 [WET approach](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself#DRY_vs_WET_solutions).
 
 Instead, to DRY things up, consider a templated Dockerfile like this
@@ -137,9 +150,8 @@ before_script:
   - pip install inji
 
 script:
-  - json_config='{ "ref": "'"$CI_COMMIT_REF_NAME"'" }'
   - >
-    inji --template Dockerfile.j2 --config "$json_config" |
+    inji --template Dockerfile.j2 --kv-config ref="$CI_COMMIT_REF_NAME" |
       docker build --pull --tag "myimage:$distribution-$version" -
   - docker push --all-tags "myimage"
 ...
@@ -161,7 +173,7 @@ will override those from files specified before
 This is especially useful in managing layered configuration where different
 tiers of a deployment enforce/provide different parameters.
 
-##### Using directory overlays
+##### Using directory configuration overlays
 
 An inevitable practice is using multiple smaller configuration files
 to avoid the growing pains of huge configuration files,
@@ -199,14 +211,30 @@ $ inji  --template=nginx.conf.j2 \  # here $CI_ENV is be some variable your CI s
         > nginx.conf                # e.g. dev, stage, prod
 ```
 
+### Parameter sourcing and precedence order
+
+Parameters can be specified and sourced from multiple places.
+The order of parameters sourced and their precedence is 12-factor friendly
+and is done as set out here (from lowest-to-highest precedence).
+
+- Default configuration file (`.inji.y*ml` or `inji.y*ml`) in current directory.
+- Overlay directories - last file sorted alphabetically wins
+- Named configuration file - last one specified wins
+- Environmental variables - last one specified wins
+- CLI JSON strings - last one specified wins
+- CLI KV strings - last one specified wins
+- Template parameters - last one specified wins (Jinja2 order)
+
 ### Fuller Example
 
 This is a very contrived example showing how to orient a `.gitlab-ci.yml`
 towards business workflows -
 a multi-stage CI/CD deployment pipeline expedited by Gitlab.
 
+Note the use of complex objects in the parameters.
+
 ```
-$ cat .gitlab-ci.yml.vars
+$ cat .gitlab-ci.vars
 ---
 project:
   name: snowmobile
@@ -222,36 +250,40 @@ environments:
 
   - name: snowmobile-env_dev
     type: dev
-    datacenter: eu-west-1
-    url:  https://snowmobile-dev.env.example.com/
-    only:
+    region: us-east-1
+    ci_url:  https://snowmobile-dev.env.example.com/
+    branches:
       - /^[0-9]+\-.*/  # Match feature branches that have
                        # a ticket number at the start of the branch name
 
   - name: snowmobile-env_stage
     type: stage
-    datacenter: eu-west-2
-    url:  https://snowmobile-stage.env.example.com/
-    only:
+    region: eu-west-2
+    ci_url:  https://snowmobile-stage.env.example.com/
+    branches:
       - master         # Deploy to stage only after merge request is complete
 
   - name: snowmobile-env_prod
     type: production
-    datacenter: eu-west-1
-    url:  https://snowmobile.env.example.com/
-    only:
+    region: eu-west-1
+    ci_url:  https://snowmobile.env.example.com/
+    branches:
       - tags           # Only deploy tagged releases to production
 
 ...
 ```
 
 ```
-$ cat .gitlab-ci.yml.j2
+$ cat .gitlab-ci.j2
 ---
 
 # >>>>>>>>>>>>>
 # >> WARNING >>   This file is autogenerated!!
+# >> !!!!!!! >>   Edit .gitlab-ci.{j2, vars} instead and `make gitlab-ci-yml`
 # >>>>>>>>>>>>>   All edits will be lost on the next update
+
+# This template when rendered with parameters from the above varsfile
+# produces the actual fuller .gitlab-ci.yml file
 
 stages:
 {% for env in environments %}
@@ -275,18 +307,18 @@ variables:
   stage: '{{ env.name }}:provision'
   environment:
     name: {{ env.type }}/$SITE/$CI_COMMIT_REF_NAME
-    url:  {{ env.url }}
+    url:  {{ env.ci_url }}
   variables:
     SITE:                {{ env.name }}
     CI_ENVIRONMENT_TYPE: {{ env.type }}
-    DATACENTER:          {{ env.datacenter }}
-    URL:                 {{ env.url }}
+    REGION:              {{ env.region }}
+    CI_URL:              {{ env.ci_url }}
   image:  {{ deployer.image }}
   script:
     - snowmobile-ctl provision
 
-  {% if env.only -%}
-  only: {{ env.only }}
+  {% if env.branches -%}
+  only: {{ env.branches }}
   {% endif %}
 
 # {{ env.type }} Run deployment
@@ -312,8 +344,8 @@ variables:
 To then update the `.gitlab-ci.yml`, run inji with the above.
 
 ```
-$ inji -t .gitlab-ci.yml.j2 \
-       -v .gitlab-ci.yml.vars > .gitlab-ci.yml
+$ inji -t .gitlab-ci.j2 \
+       -v .gitlab-ci.vars > .gitlab-ci.yml
 ```
 
 WARNING: Edits to the above files are not automatically reflected in
@@ -331,7 +363,7 @@ $ cat .githooks/pre-commit
 
 set -e
 
-inji -t .gitlab-ci.yml.j2 -v .gitlab-ci.yml.vars > .gitlab-ci.yml
+inji -t .gitlab-ci.j2 -v .gitlab-ci.vars > .gitlab-ci.yml
 
 # NOTE: git diff --exit-code ... returns 1 if file has changed
 if ! git diff --exit-code .gitlab-ci.yml; then

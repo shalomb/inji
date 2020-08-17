@@ -23,5 +23,4 @@ script:
   - make test-cov
 
 after_success:
-  - pip install -U coveralls
-  - coveralls
+  - true
