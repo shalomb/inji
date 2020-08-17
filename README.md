@@ -1,9 +1,10 @@
 ![inji](./inji-logo.png)
 
-[![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=master)](https://travis-ci.org/shalomb/inji)
-[![Coverage Status](https://coveralls.io/repos/github/shalomb/inji/badge.svg)](https://coveralls.io/github/shalomb/inji)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
 [![Pythons](https://img.shields.io/badge/python-3.6%E2%80%933.8%20%7C%20pypy-blue.svg)](.travis.yml)
+[![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=master)](https://travis-ci.org/shalomb/inji)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/shalomb/inji/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
+[![Code Intelligence Status](https://scrutinizer-ci.com/g/shalomb/inji/badges/code-intelligence.svg?b=master)](https://scrutinizer-ci.com/code-intelligence)
 
 Inji renders static
 [jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
