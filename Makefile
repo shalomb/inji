@@ -85,7 +85,7 @@ uninstall: ## Uninstall the package
 version: ## Derive new version number for a bump
 ifndef CI_BUILD_REF_NAME
 	$(warning CI_BUILD_REF_NAME is not set, are we running under gitlab CI?)
-	@ $(git) describe --tags > version
+	@ $(git) describe --tags --always > version
 else
 	@ echo "$$CI_BUILD_REF_NAME" > version
 endif
