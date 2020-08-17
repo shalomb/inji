@@ -85,11 +85,7 @@ uninstall: ## Uninstall the package
 version: ## Derive new version number for a bump
 ifndef CI_BUILD_REF_NAME
 	$(warning CI_BUILD_REF_NAME is not set, are we running under gitlab CI?)
-	# Only update ./version if we are running in an environment where we
-	# can describe tags. Looks like the clone depth under scrutinizer-ci
-	# isn't enough to do this reliably - we don't fail this step in that env.
-	@ $(git) describe --tags > _version || true
-	@ grep -iq . _version && mv _version version
+	@ $(git) describe --tags > version
 else
 	@ echo "$$CI_BUILD_REF_NAME" > version
 endif
