@@ -9,6 +9,7 @@ from   os.path import abspath, dirname, join
 import pytest
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -343,6 +344,14 @@ class TestInjiCmd(unittest.TestCase):
       ]
     )
 
+  def test_sigint(self):
+    """ Test that ctrl-c's are caught properly """
+    with subprocess.Popen([inji]) as proc:
+      proc.send_signal(signal.SIGINT)
+      proc.wait(3)
+      # exit status -N to indicate killed by signal N
+      assert proc.returncode == -1 * signal.SIGINT # SIGINT == 2
+
 if __name__ == '__main__':
-  TestInjiCmd().test_empty_json_config_args()
+  TestInjiCmd().test_sigint()
 

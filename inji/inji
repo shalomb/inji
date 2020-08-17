@@ -21,6 +21,7 @@ import os
 from os.path import abspath, basename, dirname, exists, expandvars, isdir, isfile, join
 import re
 import shutil
+import signal
 import sys
 import tempfile
 import yaml
@@ -98,7 +99,7 @@ def read_in_vars(yaml_file):
     try:
       in_vars = yaml.load(f, Loader=yaml.SafeLoader)
       if in_vars is None:
-        raise TypeError("'{}' contains no data".format(file))
+        raise TypeError("'{}' contains no data".format(yaml_file))
     except TypeError as exc:
       raise exc
   return in_vars
@@ -183,8 +184,14 @@ def cli_args():
   return parser.parse_args()
 
 
-if __name__ == '__main__':
+def sigint_handler(signum, frame):  # pragma: no cover # despite being covered
+  """ Handle SIGINT, ctrl-c gracefully """
+  signal.signal(signum, signal.SIG_IGN) # ignore subsequent ctrl-c's
+  sys.exit( 128 + signal.SIGINT )       # 130 by convention
 
+
+def main():
+  """ Our main method """
   args = cli_args()
 
   # this holds all the possible vars files we are told about or imply
@@ -241,3 +248,6 @@ if __name__ == '__main__':
                                 args.strict_mode ):
     print(block)
 
+if __name__ == '__main__':
+  signal.signal(signal.SIGINT, sigint_handler)
+  main()
