@@ -29,7 +29,8 @@ import yaml
 def render_template(
     template,
     in_vars,
-    strict_mode_behaviour
+    strict_mode_behaviour,
+    j2_env_params={},
   ):
 
   m = strict_mode_behaviour
@@ -45,9 +46,7 @@ def render_template(
   root = logging.getLogger(template)
   root.setLevel(logging.DEBUG)
   handler = logging.StreamHandler(sys.stderr)
-  logformat = '%(name)s %(levelname)s: %(message)s'
-  formatter = logging.Formatter(logformat)
-  handler.setFormatter(formatter)
+  handler.setFormatter(logging.Formatter('%(name)s %(levelname)s: %(message)s'))
   root.addHandler(handler)
 
   UndefinedHandler = make_logging_undefined( logger=root, base=Handler )
@@ -60,9 +59,17 @@ def render_template(
   # current directory of the process).
   rootdir = dirname(template)
 
-  j2_env = Environment( loader=FileSystemLoader(rootdir),
-                        undefined=UndefinedHandler,
-                        trim_blocks=True )
+  j2_env_params.setdefault('loader', FileSystemLoader(rootdir))
+  j2_env_params.setdefault('undefined', UndefinedHandler)
+  j2_env_params.setdefault('trim_blocks', True)
+  j2_env_params.setdefault('keep_trailing_newline', True)
+  j2_env_params.setdefault('extensions', [
+                          'jinja2.ext.i18n',
+                          'jinja2.ext.do',
+                          'jinja2.ext.loopcontrols',
+                        ])
+
+  j2_env = Environment(**j2_env_params)
 
   try:
     template = basename(template)
@@ -243,9 +250,10 @@ def main():
       f.write(sys.stdin.read())
     args.template = tmpfile
 
-  for block in render_template( args.template,
-                                in_vars,
-                                args.strict_mode ):
+  for block in render_template( template=args.template,
+                                in_vars=in_vars,
+                                strict_mode_behaviour=args.strict_mode
+                              ):
     print(block)
 
 if __name__ == '__main__':
