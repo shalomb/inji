@@ -74,9 +74,12 @@ def sigint_handler(signum, frame):  # pragma: no cover # despite being covered
   signal.signal(signum, signal.SIG_IGN) # ignore subsequent ctrl-c's
   sys.exit( 128 + signal.SIGINT )       # 130 by convention
 
-
 def main():
   """ Our main method """
+
+  # cleanly handle ctrl-c's
+  signal.signal(signal.SIGINT, sigint_handler)
+
   args = cli_args()
 
   # this holds all the possible vars files we are told about or imply
