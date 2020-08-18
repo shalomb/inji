@@ -5,7 +5,7 @@
 import os
 import re
 import sys
-from setuptools import setup
+from setuptools import find_packages, setup
 
 with open('version') as f:
     __version__ = f.read().strip()
@@ -34,19 +34,25 @@ setup(  name             = 'inji',
         author           = 'Shalom Bhooshi',
         author_email     = 's.bhooshi@gmail.com',
         license          = 'Apache License 2.0',
-        packages         = ['inji'],
-        zip_safe         = False,
-        scripts          = ['inji/inji'],
+        packages         = find_packages(),
+        scripts          = [],
+        entry_points     = { 'console_scripts': [ 'inji = inji:main' ] },
         install_requires = requirements,
+        include_package_data = True,
+        zip_safe         = False,
         python_requires  = '>=3.5',
         long_description = long_description,
         long_description_content_type = 'text/markdown',
+        keywords         = [ 'jinja', 'jinja2', 'templating' ],
         classifiers=[
-            'Programming Language :: Python :: 3',
-            'Operating System :: OS Independent',
+            'Development Status :: 4 - Beta',
             'Environment :: Console',
+            'Intended Audience :: Developers',
             'Intended Audience :: System Administrators',
             'License :: OSI Approved :: Apache Software License',
+            'Operating System :: OS Independent',
+            'Programming Language :: Python :: 3',
+            'Topic :: Software Development',
             'Topic :: System :: Systems Administration'
         ]
     )
