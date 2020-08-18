@@ -69,5 +69,9 @@ filters = dict(
                   f.format(**v) ),
 )
 
+if 'USE_ANSIBLE_SUPPORT' in os.environ.keys():
+  from .ansible import FilterModule
+  filters.update(FilterModule().filters())
+
 for k,v in filters.items():
   setattr(sys.modules[__name__], k, v[1])

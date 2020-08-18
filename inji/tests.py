@@ -28,5 +28,9 @@ tests = dict(
 
 )
 
+if 'USE_ANSIBLE_SUPPORT' in os.environ.keys():
+  from .ansible import TestModule
+  tests.update(TestModule().tests())
+
 for k,v in tests.items():
   setattr(sys.modules[__name__], k, v[1])
