@@ -3,3 +3,4 @@
 # See setup.py on naming requirements/dependencies there.
 jinja2==2.11.*
 pyyaml==5.3.*
+setproctitle

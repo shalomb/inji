@@ -18,6 +18,7 @@ if sys.argv[1] == 'version':
 requirements = '''
 jinja2==2.11.*
 pyyaml==5.3.*
+setproctitle
 '''.strip().split('\n')
 
 if sys.argv[1] == 'requirements':

@@ -12,6 +12,7 @@ import fnmatch
 import json
 import locale
 import os
+from setproctitle import setproctitle
 import shutil
 import signal
 import sys
@@ -79,6 +80,9 @@ def main():
 
   # cleanly handle ctrl-c's
   signal.signal(signal.SIGINT, sigint_handler)
+
+  # set process name
+  setproctitle('inji')
 
   args = cli_args()
 
