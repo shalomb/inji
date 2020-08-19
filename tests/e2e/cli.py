@@ -344,6 +344,39 @@ class TestInjiCmd(unittest.TestCase):
       ]
     )
 
+  def test_filters_format_dict(self):
+    """ Test the use of the format_dict filter """
+    os.environ['USE_ANSIBLE_SUPPORT'] = '1'
+    assert check_output(
+        injicmd,
+          '-k', 'url=https://google.com:443/webhp?q=foo+bar',
+          '-t', file_from_text("""{{
+            url | urlsplit |
+              format_dict('scheme={scheme} hostname={hostname} path={path}')
+            }}"""),
+          ) == "scheme=https hostname=google.com path=/webhp\n"
+    os.environ.pop('USE_ANSIBLE_SUPPORT')
+
+  def test_tests_is_prime(self):
+    """ Test the use of the is_prime test """
+    assert check_output(
+        injicmd, '-t', file_from_text("""{{ 2 is is_prime }}"""),
+      ) == "True\n"
+    assert check_output(
+        injicmd, '-t', file_from_text("""{{ 3 is is_prime }}"""),
+      ) == "True\n"
+    assert check_output(
+        injicmd, '-t', file_from_text("""{{ 42 is is_prime }}"""),
+      ) == "False\n"
+
+  def test_globals_strftime(self):
+    """ Test the use of the strftime global function """
+    assert re.search( '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
+      check_output(
+        injicmd, '-t', file_from_text("""{{ strftime("%FT%T") }}"""),
+      )
+    )
+
   def test_sigint(self):
     """ Test that ctrl-c's are caught properly """
     with subprocess.Popen([injicmd]) as proc:
@@ -353,5 +386,5 @@ class TestInjiCmd(unittest.TestCase):
       assert proc.returncode == -1 * signal.SIGINT # SIGINT == 2
 
 if __name__ == '__main__':
-  TestInjiCmd().test_sigint()
+  TestInjiCmd().test_globals_strftime()
 
