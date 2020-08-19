@@ -3,6 +3,9 @@
 # TODO: Consider modernizing things with Hypermodern Python
 # https://medium.com/@cjolowicz/hypermodern-python-d44485d9d769
 
+.ONESHELL:
+SHELLFLAGS := -u nounset -ec
+
 THIS_MAKEFILE := $(realpath $(lastword $(MAKEFILE_LIST)))
 THIS_DIR      := $(shell dirname $(THIS_MAKEFILE))
 THIS_PROJECT  := $(shell basename $(THIS_DIR))
@@ -19,6 +22,10 @@ python    = $(bin)/python
 script    = $(package)
 setup     = $(python) ./setup.py
 twine     = $(bin)/twine
+
+define venv
+
+endef
 
 .PHONY: all clean requirements.txt venv version
 
@@ -63,8 +70,8 @@ clean: ## Wipe the  workspace clean
 	test -e "$(git)" && $(git) checkout requirements.txt || true
 	test -e "$(git)" && $(git) checkout version || true
 	./setup.py clean --all --verbose
-	@ rm -fr .coverage dist/ build/ *.egg-info/ .*.sw? test*.tap || true
-	@ find . -depth -type d -iname __pycache__ -exec rm -fr {} +
+	@ rm -fr .coverage dist/ build/ *.egg-info/ test*.tap || true
+	@ find . -depth -type d -iname __pycache__ -o -iname *.sw? -exec rm -fr {} +
 
 venv-deps: ## Install virtualenv bootstrap dependencies
 	pip install --upgrade pip setuptools virtualenv wheel
@@ -98,20 +105,22 @@ test-deps: ## Install (py)test dependencies
 
 test: ## Run pytest tests (argument narrows down by name)
 	$(eval args := $(filter-out $@,$(MAKECMDGOALS)))
-	$(pytest) tests/**/*.py -k "$(args)"
+	. venv/bin/activate
+	$(pytest) tests/**/*.py -k '$(args)'
 
 test-cov: ## Run coverage tests
 	rm -f .coverage
-	sh -c '. venv/bin/activate; \
-						$(pytest) \
-							--cov-append \
-							--cov-report term \
-							--cov-report=term-missing \
-							--cov-fail-under=100 \
-							--cov $$PWD/inji/ tests/**/*'
+	. venv/bin/activate
+	$(pytest) \
+		--cov-append \
+		--cov-report term \
+		--cov-report=term-missing \
+		--cov-fail-under=100 \
+		--cov $$PWD/inji/ tests/**/*
 
 test-durations: ## Run tests and report durations
-	$(pytest) tests/**/* -vvvv --durations=0
+	. venv/bin/activate
+	$(pytest) tests/**/* -vvvv --durations=24
 
 %: ## Fallback to nothing
 	@:
