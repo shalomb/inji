@@ -13,6 +13,8 @@ import json
 import locale
 import os
 from   os.path import abspath, dirname, join
+import pkg_resources
+import re
 from setproctitle import setproctitle
 import shutil
 import signal
@@ -21,6 +23,17 @@ import tempfile
 
 from .engine import TemplateEngine
 from . import utils
+
+def pkg_location():
+  return abspath(dirname(__file__))
+
+def cli_location():
+  return abspath(join(pkg_location(), '../bin/inji'))
+
+def _version():
+  return pkg_resources.require(__package__)[0].version
+
+__version__ = _version()
 
 def cli_args():
   parser = argparse.ArgumentParser(
@@ -68,6 +81,12 @@ def cli_args():
     help='Refer to http://jinja.pocoo.org/docs/2.10/api/#undefined-types'
   )
 
+  required.add_argument('--version',
+    action = 'version',
+    version=_version(),
+    help='print version number ({})'.format(_version())
+  )
+
   return parser.parse_args()
 
 
@@ -75,6 +94,7 @@ def sigint_handler(signum, frame):  # pragma: no cover # despite being covered
   """ Handle SIGINT, ctrl-c gracefully """
   signal.signal(signum, signal.SIG_IGN) # ignore subsequent ctrl-c's
   sys.exit( 128 + signal.SIGINT )       # 130 by convention
+
 
 def main():
   """ Our main method """

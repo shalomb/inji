@@ -2,8 +2,8 @@
 
 # -*- coding: utf-8 -*-
 
-import inji.cli
+from inji import cli
 
 if __name__ == '__main__': # pragma: no cover
-  inji.cli.main()
+  cli.main()
 

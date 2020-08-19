@@ -5,8 +5,12 @@
 # NAME
 # inji/__init__.py
 
-from   os.path import abspath, dirname, join
+# Copyright (C) 2020 Shalom Bhooshi
+# Author: Shalom Bhooshi
 
-def cli_location():
-  return abspath(join(dirname(__file__), '../bin/inji'))
+""" Utility for rendering jinja2 templates """
 
+from . import cli
+
+__version__  = cli._version()
+cli_location = cli.cli_location()

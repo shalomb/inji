@@ -18,7 +18,7 @@ import unittest
 import inji
 
 # The location of the inji CLI entry point
-injicmd = inji.cli_location()
+injicmd = inji.cli_location
 
 def check_output(*args, **kwargs):
   os.environ['PYTHONUNBUFFERED'] = "1"
