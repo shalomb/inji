@@ -21,8 +21,21 @@ pyyaml==5.3.*
 setproctitle
 '''.strip().split('\n')
 
+requirements_test = '''
+ansible>=2.8
+cffi==1.14.2
+coverage==5.2.1
+pytest-tap==3.1
+pytest-cov==2.10.1
+pytest==6.0.1
+'''
+
 if sys.argv[1] == 'requirements':
     print('\n'.join(requirements))
+    sys.exit(0)
+
+if sys.argv[1] == 'requirements_test':
+    print(requirements_test)
     sys.exit(0)
 
 with open('README.md', 'r') as fh:

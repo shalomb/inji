@@ -93,8 +93,8 @@ else
 endif
 	$(setup) version
 
-# bin/test-harness $(filter-out $@,$(MAKECMDGOALS))
-test-deps: buildenv $(pip) ## Install (py)test dependencies
+test-deps: ## Install (py)test dependencies
+	$(pip) install $$(./setup.py requirements_test)
 
 test: ## Run pytest tests (argument narrows down by name)
 	$(eval args := $(filter-out $@,$(MAKECMDGOALS)))
