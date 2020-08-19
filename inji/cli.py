@@ -12,6 +12,7 @@ import fnmatch
 import json
 import locale
 import os
+from   os.path import abspath, dirname, join
 from setproctitle import setproctitle
 import shutil
 import signal

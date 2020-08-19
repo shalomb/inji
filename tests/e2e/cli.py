@@ -15,11 +15,10 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, join(dirname(abspath(__file__)), '../..'))
-sys.path.insert(0, join(dirname(abspath(__file__)), '../../inji'))
-
 import inji
-injicmd = 'inji'
+
+# The location of the inji CLI entry point
+injicmd = inji.cli_location()
 
 def check_output(*args, **kwargs):
   os.environ['PYTHONUNBUFFERED'] = "1"

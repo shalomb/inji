@@ -4,3 +4,9 @@
 
 # NAME
 # inji/__init__.py
+
+from   os.path import abspath, dirname, join
+
+def cli_location():
+  return abspath(join(dirname(__file__), '../bin/inji'))
+
