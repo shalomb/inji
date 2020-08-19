@@ -7,13 +7,16 @@ THIS_MAKEFILE := $(realpath $(lastword $(MAKEFILE_LIST)))
 THIS_DIR      := $(shell dirname $(THIS_MAKEFILE))
 THIS_PROJECT  := $(shell basename $(THIS_DIR))
 
+# Allow test to `import $(package)`
+export PYTHONPATH := $(THIS_DIR):$(PYTHONPATH)
+
 bin       = venv/bin
 git       = $(shell which git)
 package   = $(THIS_PROJECT)
 pip       = $(bin)/pip3 --disable-pip-version-check
 pytest    = $(bin)/pytest -ra -rxXs --color=auto --full-trace -vvv --tb=short -W ignore::DeprecationWarning --showlocals
 python    = $(bin)/python
-script    = $(package)/$(package)
+script    = $(package)
 setup     = $(python) ./setup.py
 twine     = $(bin)/twine
 
