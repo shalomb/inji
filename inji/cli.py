@@ -105,6 +105,11 @@ def main():
   # set process name
   setproctitle('inji')
 
+  assert sys.version_info >= (3,5), 'Python version ({}.{} !>= 3.5)'.format(
+    sys.version_info.major,
+    sys.version_info.minor
+  )
+
   args = cli_args()
 
   # this holds all the possible vars files we are told about or imply
