@@ -8,7 +8,7 @@ SHELLFLAGS := -u nounset -ec
 
 THIS_MAKEFILE := $(realpath $(lastword $(MAKEFILE_LIST)))
 THIS_DIR      := $(shell dirname $(THIS_MAKEFILE))
-THIS_PROJECT  := $(shell basename $(THIS_DIR))
+THIS_PROJECT  := 'inji'
 
 # Allow test to `import $(package)`
 export PYTHONPATH := $(THIS_DIR):$(PYTHONPATH)
