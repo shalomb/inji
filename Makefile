@@ -50,7 +50,6 @@ install: workspace show ## Install a release into workspace
 _install-e:
 	$(pip) install -e ./
 	which inji
-	inji --version
 
 install-editable: _install-e show ## Install an editable version into workspace
 

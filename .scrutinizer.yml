@@ -18,7 +18,7 @@ build:
       - make venv-deps venv test-deps
   tests:
     override:
-      - bash -c 'source venv/bin/activate; make test-durations'
+      - make install-editable test-durations
   nodes:
     tests: true
     analysis:
@@ -33,7 +33,7 @@ build:
     coverage:
       tests:
         override:
-          - command: bash -c 'source venv/bin/activate; make test-cov'
+          - command: make install-editable test-cov
             coverage:
               file: '.coverage'
               config_file: '.coveragerc'
