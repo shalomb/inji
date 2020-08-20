@@ -26,13 +26,12 @@ class TemplateEngine(object):
                 j2_env_params={},
     ):
 
+    UndefinedHandler = StrictUndefined
     m = undefined_variables_mode_behaviour
-    if   m in ['strict', 'StrictUndefined']:
-      Handler = StrictUndefined
-    elif m in ['empty',  'Undefined']:
-      Handler = Undefined
+    if   m in ['empty',  'Undefined']:
+      UndefinedHandler = Undefined
     elif m in ['keep',   'DebugUndefined']:
-      Handler = DebugUndefined
+      UndefinedHandler = DebugUndefined
 
     # Setup debug logging on STDERR to have the jinja2 engine emit
     # its activities
@@ -42,7 +41,7 @@ class TemplateEngine(object):
     handler.setFormatter(logging.Formatter('%(name)s %(levelname)s: %(message)s'))
     root.addHandler(handler)
 
-    UndefinedHandler = make_logging_undefined( logger=root, base=Handler )
+    UndefinedHandler = make_logging_undefined( logger=root, base=UndefinedHandler )
 
     j2_env_params.setdefault('undefined', UndefinedHandler)
     j2_env_params.setdefault('trim_blocks', True)
