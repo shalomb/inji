@@ -41,12 +41,6 @@ def cli_args():
     )
   required = parser.add_argument_group('required arguments')
 
-  required.add_argument('-t', '-f', '--template',
-    action = 'store',  required=False, type=utils.file_or_stdin,
-    dest='template', default='-',
-    help='/path/to/template.j2 (defaults to -)'
-  )
-
   parser.add_argument('-j', '--json-config', '-c',
     action = 'store', required=False,
     type=lambda x: utils.json_parse(x),
@@ -55,7 +49,7 @@ def cli_args():
   )
 
   parser.add_argument('-k', '--kv-config', '-d',
-    action = 'store', required=False,
+    action = 'append', required=False,
     type=lambda x: utils.kv_parse(x),
     dest='kv_pair',
     help='-d foo=bar -d fred=wilma'
@@ -81,10 +75,18 @@ def cli_args():
     help='Refer to http://jinja.pocoo.org/docs/2.10/api/#undefined-types'
   )
 
-  required.add_argument('--version',
+  parser.add_argument('--version',
     action = 'version',
     version=_version(),
     help='print version number ({})'.format(_version())
+  )
+
+  parser.add_argument('template',
+    nargs='*',
+    action = 'store',
+    type=utils.file_or_stdin,
+    default='-',
+    help='/path/to/template.j2 (defaults to -)'
   )
 
   return parser.parse_args()
@@ -144,14 +146,16 @@ def main():
     context.update(args.json_string)
 
   if args.kv_pair:
-    context.update(args.kv_pair)
+    # we've appended dicts into args.kv_pair .. unpack them in order
+    for d in args.kv_pair:
+      context.update(d)
 
-  if args.template == '-':
+  if '-' in args.template:
     # Template passed in via stdin. Create template as a tempfile and use it
     # instead but since includes are possible (though not likely), we have to do
     # this in an isolated tmpdir container to prevent inadvertent reading of
     # includes not meant to be read.
-    tmpdir = tempfile.mkdtemp()
+    tmpdir = tempfile.mkdtemp(prefix=__name__)
     atexit.register(shutil.rmtree, tmpdir)
 
     _, tmpfile = tempfile.mkstemp(prefix='stdin-', dir=tmpdir, text=True)
@@ -159,10 +163,13 @@ def main():
 
     with open(tmpfile, "a+") as f:
       f.write(sys.stdin.read())
-    args.template = tmpfile
+
+    # Yes, even if user specifies multiple other templates, the fact he
+    # specified '-' just once means we only deal with one template i.e. '-'
+    args.template = [tmpfile]
 
   engine = TemplateEngine( undefined_variables_mode_behaviour=args.undefined_variables_mode )
-  for block in engine.render( template=args.template,
-                              context=context,
-                            ):
-    print(block)
+
+  for template in args.template:
+    for block in engine.render( template=template, context=context ):
+      print(block)

@@ -52,7 +52,7 @@ def file_from_text(*args, **kwargs):
   fqdir=kwargs.get('dir', tempfile.tempdir)
 
   if kwargs.get('name') is None:
-    _, filename = tempfile.mkstemp( text=True, dir=fqdir)
+    _, filename = tempfile.mkstemp(text=True, dir=fqdir)
   else:
     filename = join(fqdir, kwargs.get('name'))
 
@@ -85,7 +85,7 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_stdin_empty_input(self):
     """Empty template string should return a newline"""
-    assert '\n' == check_output( injicmd, input=b"" )
+    assert check_output( injicmd, input=b"" ) == '\n'
 
   def test_json_config_args(self):
     """Config passed as JSON string"""
@@ -107,14 +107,12 @@ class TestInjiCmd(unittest.TestCase):
     """ Config passed as KV strings """
     assert check_output(
         injicmd,
-          '-k', 'foo=bar',
+          '-k', 'bar=bar',
+          '-k', 'foo=bar',     # should keep bar
           '-k', 'foo=world!',  # valid, last declaration wins
-          input=b"Hola {{ foo }}"
-      ) == "Hola world!\n"
-    assert check_output(
-        injicmd, '-k', 'foo=',    # valid, sets foo to be empty
-          input=b"Hola {{ foo }}"
-      ) ==  "Hola \n"
+          '-k', 'moo=',        # valid, sets an empty moo
+          input=b"Hola {{ foo }}{{ moo }}{{ bar }}"
+      ) == "Hola world!bar\n"
 
   def test_invalid_kv_config_args(self):
     """Invalid KV config args should cause an error"""
@@ -263,7 +261,7 @@ class TestInjiCmd(unittest.TestCase):
     """Environment variables should be referenceable as parameters"""
     template = file_from_text("Hola {{ foo }}")
     os.environ['foo'] = 'world!'
-    assert check_output( injicmd, '-t', template ) == 'Hola world!\n'
+    assert check_output( injicmd, template ) == 'Hola world!\n'
     os.environ.pop('foo')
 
   def test_template_render_with_internal_vars(self):
@@ -272,12 +270,12 @@ class TestInjiCmd(unittest.TestCase):
     referencing those variables set in the templates themselves
     """
     template = file_from_text("{% set foo='world!' %}Hola {{ foo }}")
-    assert check_output( injicmd, '-t', template ) == 'Hola world!\n'
+    assert check_output( injicmd, template ) == 'Hola world!\n'
 
   def test_template_missing(self):
     """ Missing template files should cause an error """
     run_negative_test(
-      command=[ injicmd, '-t', 'nonexistent-template.j2' ],
+      command=[ injicmd, 'nonexistent-template.j2' ],
       errors=[
         'nonexistent-template.j2.. does not exist'
       ]
@@ -286,7 +284,7 @@ class TestInjiCmd(unittest.TestCase):
   def test_template_directory(self):
     """ Using a directory as a template source should cause an error"""
     run_negative_test(
-      command=[ injicmd, '-t', '/' ],
+      command=[ injicmd, '/' ],
       errors=[
         'error: argument',
         'path ../.. is not a file',
@@ -298,8 +296,35 @@ class TestInjiCmd(unittest.TestCase):
     template = file_from_text("Hola {{ foo }}")
     varsfile = file_from_text("foo: world!")
     assert check_output(
-            injicmd, '-t', template, '-v', varsfile
+            injicmd, template, '-v', varsfile
         ) == 'Hola world!\n'
+
+  def test_multiple_templates(self):
+    """ Multiple template should all be rendered to STDOUT """
+    # Documentation note:
+    # Positional arguments must be adjacent to one another.
+    # i.e. -k foo=bar t1 -k bar=foo t2  # is unsupported by argsparse
+    assert check_output(
+            injicmd,
+              file_from_text("t1: {{ k1 }}{{ quuz }}"),
+              file_from_text("t2: {{ k2 }}{{ moo }}"),
+              '-k', 'k1=foo',
+              '-k', 'k2=bar',
+              '-v', file_from_text("k2: bar\nmoo: quux\nquuz: grault")
+          ) == "t1: foograult\nt2: barquux\n"
+
+  def test_multiple_templates_alongside_stdin(self):
+    """ The use of STDIN with multiple templates should only render STDIN """
+    # This is an edge-case that perhaps users would not (should not) likely do
+    # but it doesn't make sense to mix STDIN with multiple named template files
+    # (or does it?). For now, we favour only using STDIN in this case.
+    assert check_output(
+            injicmd,
+              file_from_text("t1"),    # named template should be ignored
+              '/dev/stdin',            # STDIN should be used
+              file_from_text("t2"),    # named template should be ignored
+              input=b"crash override"  # This is what renders
+          ) == "crash override\n"
 
   def test_template_render_with_multiple_varsfiles(self):
     """Params from multiple files should be merged before rendering"""
@@ -307,7 +332,7 @@ class TestInjiCmd(unittest.TestCase):
     varsfile1 = file_from_text("foo: world!\nt: quux")
     varsfile2 = file_from_text("bar: metaverse\nt: moocow")
     assert check_output(
-          injicmd, '-t', template,
+          injicmd, template,
                 '-v', varsfile1,
                 '-v', varsfile2
       ) == 'Hola world!, Hello metaverse, tmoocow\n'
@@ -321,7 +346,7 @@ class TestInjiCmd(unittest.TestCase):
     """
     assert run_negative_test(
       command=[
-        injicmd, '-t', file_from_text("Hola {{ foo }}"),
+        injicmd, file_from_text("Hola {{ foo }}"),
               '-v', file_from_text('')
       ],
       exit_code=1,
@@ -334,7 +359,7 @@ class TestInjiCmd(unittest.TestCase):
     """ An invalid varsfile is a fail-early error """
     run_negative_test(
       command=[
-        injicmd, '-t', file_from_text("Hola {{ foo }}"),
+        injicmd, file_from_text("Hola {{ foo }}"),
               '-v', file_from_text('@')
       ],
       exit_code=1,
@@ -349,7 +374,7 @@ class TestInjiCmd(unittest.TestCase):
     assert check_output(
         injicmd,
           '-k', 'url=https://google.com:443/webhp?q=foo+bar',
-          '-t', file_from_text("""{{
+          file_from_text("""{{
             url | urlsplit |
               format_dict('scheme={scheme} hostname={hostname} path={path}')
             }}"""),
@@ -359,20 +384,20 @@ class TestInjiCmd(unittest.TestCase):
   def test_tests_is_prime(self):
     """ Test the use of the is_prime test """
     assert check_output(
-        injicmd, '-t', file_from_text("""{{ 2 is is_prime }}"""),
+        injicmd, file_from_text("""{{ 2 is is_prime }}"""),
       ) == "True\n"
     assert check_output(
-        injicmd, '-t', file_from_text("""{{ 3 is is_prime }}"""),
+        injicmd, file_from_text("""{{ 3 is is_prime }}"""),
       ) == "True\n"
     assert check_output(
-        injicmd, '-t', file_from_text("""{{ 42 is is_prime }}"""),
+        injicmd, file_from_text("""{{ 42 is is_prime }}"""),
       ) == "False\n"
 
   def test_globals_strftime(self):
     """ Test the use of the strftime global function """
     assert re.search( '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
       check_output(
-        injicmd, '-t', file_from_text("""{{ strftime("%FT%T") }}"""),
+        injicmd, file_from_text("""{{ strftime("%FT%T") }}"""),
       )
     )
 
