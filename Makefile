@@ -8,7 +8,7 @@ SHELLFLAGS := -u nounset -ec
 
 THIS_MAKEFILE := $(realpath $(lastword $(MAKEFILE_LIST)))
 THIS_DIR      := $(shell dirname $(THIS_MAKEFILE))
-THIS_PROJECT  := 'inji'
+THIS_PROJECT  := inji
 
 # Allow test to `import $(package)`
 export PYTHONPATH := $(THIS_DIR):$(PYTHONPATH)
@@ -58,12 +58,15 @@ show: ## Show the version installed by pip
 	$(python) $(script) --version
 
 run: ## Run the installable
-	 $(python) $(script) -h
+	 @ $(python) $(script) -h
 
 build: package
 	@ :
 
-package: test-cov version ## Build and validate the wheels ready for a PyPi release
+package-deps: ## Install dependencies needed to package this distribution
+	$(pip) install --upgrade twine
+
+package: clean package-deps version ## Build and validate the wheels ready for a PyPi release
 	$(setup) install bdist_wheel sdist
 	$(twine) check dist/*
 
@@ -74,14 +77,14 @@ clean: ## Wipe the  workspace clean
 	test -e "$(git)" && $(git) checkout version || true
 	find tests/ -depth -type d '(' -iname __pycache__ -o -iname '*.sw?' ')' -exec rm -fr {} +
 	rm -fr .coverage dist/ build/ *.egg-info/ test*.tap || true
-	./setup.py clean --all --verbose
+	$(setup) clean --all --verbose
 
 venv-deps: ## Install virtualenv bootstrap dependencies
 	pip install --upgrade pip setuptools twine virtualenv wheel
 
 venv: $(pip) requirements ## Create the workspace with test frameworks
 
-$(pip): venv-deps venv ## Install pip
+$(pip): ## Install pip
 	test -d venv/bin || virtualenv venv/
 	$(pip) install --upgrade pip
 

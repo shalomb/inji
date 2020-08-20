@@ -66,27 +66,25 @@ class VersionCommand(distutils.cmd.Command):
             print(__version__)
             return(__version__)
 
-with open('LICENSE-2.0.txt') as f:
-    license = f.read()
-
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
-setuptools.setup(  name             = 'inji',
+setuptools.setup(
+        name             = 'inji',
         version          = __version__,
         description      = 'Render parametrized Jinja2 templates at the CLI',
         url              = 'https://github.com/shalomb/inji',
         author           = 'Shalom Bhooshi',
         author_email     = 's.bhooshi@gmail.com',
-        license          = license,
+        license          = 'Apache License 2.0',
         packages         = setuptools.find_packages(),
         scripts          = [ 'bin/inji' ],
         install_requires = requirements_dev,
         include_package_data = True,
         zip_safe         = False,
         python_requires  = '>=3.5',
-        long_description = long_description,
         long_description_content_type = 'text/markdown',
+        long_description = long_description,
         keywords         = [ 'jinja', 'jinja2', 'templating' ],
         classifiers=[
             'Development Status :: 4 - Beta',
