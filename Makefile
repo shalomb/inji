@@ -58,7 +58,7 @@ show: ## Show the version installed by pip
 	$(python) $(script) --version
 
 run: ## Run the installable
-	 @ $(python) $(script) -h
+	@ $(python) $(script) -h
 
 build: package
 	@ :
@@ -77,7 +77,7 @@ clean: ## Wipe the  workspace clean
 	test -e "$(git)" && $(git) checkout version || true
 	find tests/ -depth -type d '(' -iname __pycache__ -o -iname '*.sw?' ')' -exec rm -fr {} +
 	rm -fr .coverage dist/ build/ *.egg-info/ test*.tap || true
-	$(setup) clean --all --verbose
+	./setup.py clean --all --verbose
 
 venv-deps: ## Install virtualenv bootstrap dependencies
 	pip install --upgrade pip setuptools twine virtualenv wheel
