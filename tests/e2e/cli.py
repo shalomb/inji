@@ -15,17 +15,16 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, join(dirname(abspath(__file__)), '../..'))
-sys.path.insert(0, join(dirname(abspath(__file__)), '../../inji'))
-
 import inji
-inji = abspath(join(sys.path[0], 'inji'))
+
+# The location of the inji CLI entry point
+injicmd = inji.cli_location
 
 def check_output(*args, **kwargs):
   os.environ['PYTHONUNBUFFERED'] = "1"
   return subprocess.check_output( [*args], **kwargs ).decode('utf-8')
 
-def run_negative_test( command=[ inji ],
+def run_negative_test( command=[ injicmd ],
                         exit_code=2,
                         errors=None,
                         stderr=subprocess.STDOUT,
@@ -76,22 +75,22 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_help(self):
     """Test help message is emitted"""
-    assert re.search('usage: inji', check_output(inji, '-h'))
+    assert re.search('usage: inji', check_output(injicmd, '-h'))
 
   def test_stdin(self):
     """Templates should be read in from STDIN (-) by default"""
-    assert check_output( inji,
+    assert check_output( injicmd,
                           input=b"{% set foo='world!' %}Hola {{ foo }}"
       ) == "Hola world!\n"
 
   def test_stdin_empty_input(self):
     """Empty template string should return a newline"""
-    assert '\n' == check_output( inji, input=b"" )
+    assert '\n' == check_output( injicmd, input=b"" )
 
   def test_json_config_args(self):
     """Config passed as JSON string"""
     assert check_output(
-        inji, '-j', '{"foo": "world!"}',
+        injicmd, '-j', '{"foo": "world!"}',
           input=b"Hola {{ foo }}"
       ) == "Hola world!\n"
 
@@ -100,20 +99,20 @@ class TestInjiCmd(unittest.TestCase):
     input_cases = [ '', '}{', '{@}' ] # invalid JSON inputs
     for json in input_cases:
       run_negative_test(
-        command=[ inji, '-j', json ],
+        command=[ injicmd, '-j', json ],
         errors=[ 'Error parsing JSON config:' ]
       )
 
   def test_kv_config_args(self):
     """ Config passed as KV strings """
     assert check_output(
-        inji,
+        injicmd,
           '-k', 'foo=bar',
           '-k', 'foo=world!',  # valid, last declaration wins
           input=b"Hola {{ foo }}"
       ) == "Hola world!\n"
     assert check_output(
-        inji, '-k', 'foo=',    # valid, sets foo to be empty
+        injicmd, '-k', 'foo=',    # valid, sets foo to be empty
           input=b"Hola {{ foo }}"
       ) ==  "Hola \n"
 
@@ -122,7 +121,7 @@ class TestInjiCmd(unittest.TestCase):
     input_cases = [ '', '=', '=baz' ] # invalid KV inputs
     for kv in input_cases:
       run_negative_test(
-        command=[ inji, '-k', kv ],
+        command=[ injicmd, '-k', kv ],
         errors=[ 'Invalid key found parsing' ]
       )
 
@@ -154,7 +153,7 @@ class TestInjiCmd(unittest.TestCase):
     # but also source from the default (low-precedence) config file relative to PWD
     assert re.search('Hola \w+ from bella',
       check_output(
-        inji,
+        injicmd,
           '-o', f"{tmpdir}/dev",
           input=b"Hola {{ item }} from {{ zar }}"
       )
@@ -162,13 +161,13 @@ class TestInjiCmd(unittest.TestCase):
 
     # dev/c.yaml should be last file sourced
     assert check_output(
-        inji, '-o', f"{tmpdir}/dev",
+        injicmd, '-o', f"{tmpdir}/dev",
           input=b"Hola {{ zoo }}"
       ) == "Hola c.yaml\n"
 
     # prod/ should be the last overlay sourced
     assert check_output(
-        inji,
+        injicmd,
           '-o', f"{tmpdir}/stage",
           '-o', f"{tmpdir}/dev",
           '-o', f"{tmpdir}/prod",
@@ -177,7 +176,7 @@ class TestInjiCmd(unittest.TestCase):
 
     # named config file trumps overlays, arg position is irrelevant
     assert check_output(
-        inji,
+        injicmd,
           '-o', f"{tmpdir}/stage",
           '-o', f"{tmpdir}/prod",
           '-v', param_file,
@@ -188,7 +187,7 @@ class TestInjiCmd(unittest.TestCase):
     # env vars trump named config files
     os.environ['zoo']='env'
     assert check_output(
-        inji,
+        injicmd,
           '-o', f"{tmpdir}/stage",
           '-o', f"{tmpdir}/prod",
           '-v', param_file,
@@ -198,7 +197,7 @@ class TestInjiCmd(unittest.TestCase):
 
     # cli params passed in as JSON strings at the CLI trump all files
     assert check_output(
-        inji,
+        injicmd,
           '-o', f"{tmpdir}/stage",
           '-j', '{"zoo": "world!"}',
           '-o', f"{tmpdir}/prod",
@@ -212,7 +211,7 @@ class TestInjiCmd(unittest.TestCase):
     # A: the use-case is overriding particular values from a JSON blurb sourced
     #    from a file or external system.
     assert check_output(
-        inji,
+        injicmd,
           '-k', 'zar=della',
           '-o', f"{tmpdir}/stage",
           '-j', '{"zoo": "world!"}',
@@ -224,7 +223,7 @@ class TestInjiCmd(unittest.TestCase):
 
     # except when params are defined in the templates themselves, off course!
     assert check_output(
-        inji,
+        injicmd,
           '-k', 'zar=della',
           '-o', f"{tmpdir}/stage",
           '-j', '{"zoo": "mars"}',
@@ -250,13 +249,13 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_keep_undefined_var(self):
     """Undefined variable placeholders in keep mode should be kept"""
-    assert check_output( inji, '-s', 'keep',
+    assert check_output( injicmd, '-s', 'keep',
                           input=b"[Hola {{ foo }}]"
       ) == '[Hola {{ foo }}]\n'
 
   def test_empty_undefined_var(self):
     """Undefined variables in empty mode should leave spaces behind placeholders"""
-    assert check_output( inji, '-s', 'empty',
+    assert check_output( injicmd, '-s', 'empty',
                           input=b"[Hola {{ foo }}]"
       ) == '[Hola ]\n'
 
@@ -264,7 +263,7 @@ class TestInjiCmd(unittest.TestCase):
     """Environment variables should be referenceable as parameters"""
     template = file_from_text("Hola {{ foo }}")
     os.environ['foo'] = 'world!'
-    assert check_output( inji, '-t', template ) == 'Hola world!\n'
+    assert check_output( injicmd, '-t', template ) == 'Hola world!\n'
     os.environ.pop('foo')
 
   def test_template_render_with_internal_vars(self):
@@ -273,12 +272,12 @@ class TestInjiCmd(unittest.TestCase):
     referencing those variables set in the templates themselves
     """
     template = file_from_text("{% set foo='world!' %}Hola {{ foo }}")
-    assert check_output( inji, '-t', template ) == 'Hola world!\n'
+    assert check_output( injicmd, '-t', template ) == 'Hola world!\n'
 
   def test_template_missing(self):
     """ Missing template files should cause an error """
     run_negative_test(
-      command=[ inji, '-t', 'nonexistent-template.j2' ],
+      command=[ injicmd, '-t', 'nonexistent-template.j2' ],
       errors=[
         'nonexistent-template.j2.. does not exist'
       ]
@@ -287,7 +286,7 @@ class TestInjiCmd(unittest.TestCase):
   def test_template_directory(self):
     """ Using a directory as a template source should cause an error"""
     run_negative_test(
-      command=[ inji, '-t', '/' ],
+      command=[ injicmd, '-t', '/' ],
       errors=[
         'error: argument',
         'path ../.. is not a file',
@@ -299,7 +298,7 @@ class TestInjiCmd(unittest.TestCase):
     template = file_from_text("Hola {{ foo }}")
     varsfile = file_from_text("foo: world!")
     assert check_output(
-            inji, '-t', template, '-v', varsfile
+            injicmd, '-t', template, '-v', varsfile
         ) == 'Hola world!\n'
 
   def test_template_render_with_multiple_varsfiles(self):
@@ -308,7 +307,7 @@ class TestInjiCmd(unittest.TestCase):
     varsfile1 = file_from_text("foo: world!\nt: quux")
     varsfile2 = file_from_text("bar: metaverse\nt: moocow")
     assert check_output(
-          inji, '-t', template,
+          injicmd, '-t', template,
                 '-v', varsfile1,
                 '-v', varsfile2
       ) == 'Hola world!, Hello metaverse, tmoocow\n'
@@ -322,7 +321,7 @@ class TestInjiCmd(unittest.TestCase):
     """
     assert run_negative_test(
       command=[
-        inji, '-t', file_from_text("Hola {{ foo }}"),
+        injicmd, '-t', file_from_text("Hola {{ foo }}"),
               '-v', file_from_text('')
       ],
       exit_code=1,
@@ -335,7 +334,7 @@ class TestInjiCmd(unittest.TestCase):
     """ An invalid varsfile is a fail-early error """
     run_negative_test(
       command=[
-        inji, '-t', file_from_text("Hola {{ foo }}"),
+        injicmd, '-t', file_from_text("Hola {{ foo }}"),
               '-v', file_from_text('@')
       ],
       exit_code=1,
@@ -344,14 +343,47 @@ class TestInjiCmd(unittest.TestCase):
       ]
     )
 
+  def test_filters_format_dict(self):
+    """ Test the use of the format_dict filter """
+    os.environ['USE_ANSIBLE_SUPPORT'] = '1'
+    assert check_output(
+        injicmd,
+          '-k', 'url=https://google.com:443/webhp?q=foo+bar',
+          '-t', file_from_text("""{{
+            url | urlsplit |
+              format_dict('scheme={scheme} hostname={hostname} path={path}')
+            }}"""),
+          ) == "scheme=https hostname=google.com path=/webhp\n"
+    os.environ.pop('USE_ANSIBLE_SUPPORT')
+
+  def test_tests_is_prime(self):
+    """ Test the use of the is_prime test """
+    assert check_output(
+        injicmd, '-t', file_from_text("""{{ 2 is is_prime }}"""),
+      ) == "True\n"
+    assert check_output(
+        injicmd, '-t', file_from_text("""{{ 3 is is_prime }}"""),
+      ) == "True\n"
+    assert check_output(
+        injicmd, '-t', file_from_text("""{{ 42 is is_prime }}"""),
+      ) == "False\n"
+
+  def test_globals_strftime(self):
+    """ Test the use of the strftime global function """
+    assert re.search( '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
+      check_output(
+        injicmd, '-t', file_from_text("""{{ strftime("%FT%T") }}"""),
+      )
+    )
+
   def test_sigint(self):
     """ Test that ctrl-c's are caught properly """
-    with subprocess.Popen([inji]) as proc:
+    with subprocess.Popen([injicmd]) as proc:
       proc.send_signal(signal.SIGINT)
       proc.wait(3)
       # exit status -N to indicate killed by signal N
       assert proc.returncode == -1 * signal.SIGINT # SIGINT == 2
 
 if __name__ == '__main__':
-  TestInjiCmd().test_sigint()
+  TestInjiCmd().test_globals_strftime()
 
