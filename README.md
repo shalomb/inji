@@ -1,6 +1,6 @@
 ![inji](./inji-logo.png)
 
-[![Pythons](https://img.shields.io/badge/python-3.6%E2%80%933.8%20%7C%20pypy-blue.svg)](.travis.yml)
+[![Pythons](https://img.shields.io/badge/python-3.5%E2%80%933.9%20%7C%20pypy-blue.svg)](.travis.yml)
 [![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=master)](https://travis-ci.org/shalomb/inji)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
 [![Code Coverage](https://scrutinizer-ci.com/g/shalomb/inji/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
@@ -21,7 +21,7 @@ usable pattern.
 ### Installation
 
 ```
-python3 -m pip install inji   #  or use pip3/pip, requires python3 >= 3.6
+python3 -m pip install inji   #  or use pip3/pip, requires python >= 3.6 (may work on 3.5)
 ```
 
 ### Usage
