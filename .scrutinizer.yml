@@ -12,13 +12,9 @@ build:
   environment:
     python:
       virtualenv: true
-  dependencies:
-    override:
-      - pip install --upgrade pip coverage
-      - make venv-deps venv test-deps
   tests:
     override:
-      - make install-editable test-durations
+      - make venv-deps venv test-deps install-editable test-durations
   nodes:
     tests: true
     analysis:
@@ -33,7 +29,9 @@ build:
     coverage:
       tests:
         override:
-          - command: make install-editable test-cov
+          - command: >
+              pip install --upgrade pip coverage;
+              make venv-deps venv test-deps install-editable test-cov
             coverage:
               file: '.coverage'
               config_file: '.coveragerc'
