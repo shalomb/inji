@@ -21,8 +21,8 @@ before_script:
 
 script:
   - make install-editable
-  - make test
-  - make test-cov
+  - make test-durations test-cov
+  - make install
 
 after_success:
   - true

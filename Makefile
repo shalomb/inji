@@ -22,7 +22,7 @@ pytest    = . venv/bin/activate; $(bin)/pytest tests/**/*.py
 python    = $(bin)/python
 script    = bin/$(package)
 setup     = $(python) ./setup.py
-twine     = $(bin)/twine
+twine     = twine
 
 define venv
 
@@ -42,16 +42,17 @@ help: ## Show make targets available
 	@ grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s - %s\n", $$1, $$2}'
 
-install: workspace show ## Install a release into workspace
-	$(setup) version
-	$(setup) clean --all
-	$(pip)   install .
+install: venv-deps ## Installs this package
+	python3 -m pip install ./
 
 _install-e:
 	$(pip) install -e ./
 	which inji
 
 install-editable: _install-e show ## Install an editable version into workspace
+
+uninstall: ## Uninstall the package
+	python3 -m pip uninstall -y $(package)
 
 show: ## Show the version installed by pip
 	$(pip) list | grep -i $(package) || true
@@ -64,23 +65,24 @@ build: package
 	@ :
 
 package-deps: ## Install dependencies needed to package this distribution
-	$(pip) install --upgrade twine
+	python3 -m pip install --upgrade twine
 
 package: clean package-deps version ## Build and validate the wheels ready for a PyPi release
-	$(setup) install bdist_wheel sdist
-	$(twine) check dist/*
+	./setup.py bdist_wheel sdist
+	twine check dist/*
 
 release: package ## Upload wheels to PyPi to mark a new release
-	$(twine) upload --skip-existing dist/*
+	twine upload --skip-existing dist/*
 
 clean: ## Wipe the  workspace clean
 	test -e "$(git)" && $(git) checkout version || true
-	find tests/ -depth -type d '(' -iname __pycache__ -o -iname '*.sw?' ')' -exec rm -fr {} +
-	rm -fr .coverage dist/ build/ *.egg-info/ test*.tap || true
+	find ./ -depth '(' -type d -iname __pycache__ -o -type f -iname '.*.sw?' ')' -exec rm -fr {} +
+	rm -fr .coverage dist/ build/ .pytest_cache *.egg-info/ test*.tap || true
 	./setup.py clean --all --verbose
 
 venv-deps: ## Install virtualenv bootstrap dependencies
-	pip install --upgrade pip setuptools twine virtualenv wheel
+	which pip3 || curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3;
+	python3 -m pip install --upgrade pip setuptools twine virtualenv wheel
 
 venv: $(pip) requirements ## Create the workspace with test frameworks
 
@@ -95,9 +97,6 @@ requirements.txt: ## Create requirements.txt from setup.py
 	# This is required by most CI systems
 	$(setup) requirements >> requirements.txt
 
-uninstall: ## Uninstall the package
-	$(pip) uninstall -y $(package)
-
 version: ## Derive new version number for a bump
 ifndef CI_BUILD_REF_NAME
 	$(warning CI_BUILD_REF_NAME is not set, are we running under gitlab CI?)
@@ -105,7 +104,7 @@ ifndef CI_BUILD_REF_NAME
 else
 	echo "$$CI_BUILD_REF_NAME" > version
 endif
-	$(setup) version
+	./setup.py version
 
 test-deps: ## Install (py)test dependencies
 	$(pip) install -U $$($(setup) requirements --test)
