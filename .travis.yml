@@ -22,7 +22,7 @@ before_script:
 script:
   - make install-editable
   - make test-durations test-cov
-  - make install
+  - make install-build run
 
 after_success:
   - true

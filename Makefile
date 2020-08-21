@@ -51,6 +51,9 @@ _install-e:
 
 install-editable: _install-e show ## Install an editable version into workspace
 
+install-build: venv-deps package ## Installs the built package
+	python3 -m pip install dist/*.whl
+
 uninstall: ## Uninstall the package
 	python3 -m pip uninstall -y $(package)
 
