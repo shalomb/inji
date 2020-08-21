@@ -16,6 +16,10 @@ _globals = dict(
     lambda : datetime.now()
   ),
 
+  date  = ( """ Return the timestamp for datetime.now() """,
+    datetime.now()  # variable
+  ),
+
   strftime = ( """ Return a date string specified in strftime(3) format """,
     lambda f='%F %T%z', tz='UTC':
       datetime.now(timezone.utc if tz == 'UTC' else None).strftime(f)
