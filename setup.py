@@ -2,11 +2,12 @@
 
 # -*- coding: utf-8 -*-
 
+import distutils.cmd
 import os
 import re
-import sys
 import setuptools
-import distutils.cmd
+import subprocess
+import sys
 
 # Suppress setup.py's stdout logging for our commands that output data
 if any( x in ['requirements', 'version'] for x in sys.argv ):
@@ -49,56 +50,60 @@ class RequirementsCommand(distutils.cmd.Command):
         print('\n'.join(requirements))
         return requirements
 
-with open('version') as f:
-    __version__ = f.read().strip()
-    __version__ = re.sub('^[vV]|\-\w{8}$', '', __version__)
+def version():
+    args = 'git describe --tags --always'.split(' ')
+    version = subprocess.check_output(args).decode().strip()
+    version = re.sub('^[vV]|\-\w{8}$', '', version)
+    version = re.sub('-', '.post', version)
+    return version
 
 class VersionCommand(distutils.cmd.Command):
-    """ Emit version """
-    description = 'Emit version'
+    """ Emit version numbers """
+    description = 'Emit version numbers'
     user_options = [
-        ('version', None, 'version')
+        ('version', None, 'current version number'),
+        ('next', None, 'next version number'),
     ]
     def initialize_options(self): pass
     def finalize_options(self): pass
     def run(self):
-            print(__version__)
-            return(__version__)
+        print(version())
+        return(version())
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-        name             = 'inji',
-        version          = __version__,
-        description      = 'Render parametrized Jinja2 templates at the CLI',
-        author           = 'Shalom Bhooshi',
-        author_email     = 's.bhooshi@gmail.com',
-        license          = 'Apache License 2.0',
-        url              = 'https://github.com/shalomb/inji',
-        download_url     = 'https://github.com/shalomb/inji/tarball/{}'.format(__version__),
-        packages         = setuptools.find_packages(),
-        scripts          = [ 'bin/inji' ],
-        install_requires = requirements_dev,
-        include_package_data = True,
-        zip_safe         = False,
-        python_requires  = '>=3.5',
-        long_description_content_type = 'text/markdown',
-        long_description = long_description,
-        keywords         = [ 'jinja', 'jinja2', 'templating' ],
-        classifiers      = [
-            'Development Status :: 4 - Beta',
-            'Environment :: Console',
-            'Intended Audience :: Developers',
-            'Intended Audience :: System Administrators',
-            'License :: OSI Approved :: Apache Software License',
-            'Operating System :: OS Independent',
-            'Programming Language :: Python :: 3',
-            'Topic :: Software Development',
-            'Topic :: System :: Systems Administration'
-        ],
-        cmdclass         = {
-            'requirements': RequirementsCommand,
-            'version':      VersionCommand,
-        }
-    )
+    name             = 'inji',
+    version          = version(),
+    description      = 'Render parametrized Jinja2 templates at the CLI',
+    author           = 'Shalom Bhooshi',
+    author_email     = 's.bhooshi@gmail.com',
+    license          = 'Apache License 2.0',
+    url              = 'https://github.com/shalomb/inji',
+    download_url     = 'https://github.com/shalomb/inji/tarball/{}'.format(version()),
+    packages         = setuptools.find_packages(),
+    scripts          = [ 'bin/inji' ],
+    install_requires = requirements_dev,
+    include_package_data = True,
+    zip_safe         = False,
+    python_requires  = '>=3.5',
+    long_description_content_type = 'text/markdown',
+    long_description = long_description,
+    keywords         = [ 'jinja', 'jinja2', 'templating' ],
+    classifiers      = [
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: Apache Software License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3',
+        'Topic :: Software Development',
+        'Topic :: System :: Systems Administration'
+    ],
+    cmdclass         = {
+        'requirements': RequirementsCommand,
+        'version':      VersionCommand,
+    }
+)

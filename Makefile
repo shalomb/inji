@@ -102,14 +102,7 @@ requirements.txt: ## Create requirements.txt from setup.py
 	$(setup) requirements >> requirements.txt
 
 version: ## Derive new version number for a bump
-ifndef CI_BUILD_REF_NAME
-	$(warning CI_BUILD_REF_NAME is not set, are we running under gitlab CI?)
-	$(git) describe --tags --always > _version
-else
-	echo "$$CI_BUILD_REF_NAME" > _version
-endif
-	grep -iq . _version && mv _version version; rm -f _version
-	./setup.py version
+	@ ./setup.py version
 
 test-deps: ## Install (py)test dependencies
 	$(pip) install -U $$($(setup) requirements --test)
