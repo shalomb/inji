@@ -72,6 +72,7 @@ package-deps: ## Install dependencies needed to package this distribution
 
 package: clean package-deps version ## Build and validate the wheels ready for a PyPi release
 	./setup.py bdist_wheel sdist
+	./setup.py check -sm
 	twine check dist/*
 
 release: package ## Upload wheels to PyPi to mark a new release
@@ -103,10 +104,11 @@ requirements.txt: ## Create requirements.txt from setup.py
 version: ## Derive new version number for a bump
 ifndef CI_BUILD_REF_NAME
 	$(warning CI_BUILD_REF_NAME is not set, are we running under gitlab CI?)
-	$(git) describe --tags --always > version
+	$(git) describe --tags --always > _version
 else
-	echo "$$CI_BUILD_REF_NAME" > version
+	echo "$$CI_BUILD_REF_NAME" > _version
 endif
+	grep -iq . _version && mv _version version; rm -f _version
 	./setup.py version
 
 test-deps: ## Install (py)test dependencies

@@ -72,10 +72,11 @@ setuptools.setup(
         name             = 'inji',
         version          = __version__,
         description      = 'Render parametrized Jinja2 templates at the CLI',
-        url              = 'https://github.com/shalomb/inji',
         author           = 'Shalom Bhooshi',
         author_email     = 's.bhooshi@gmail.com',
         license          = 'Apache License 2.0',
+        url              = 'https://github.com/shalomb/inji',
+        download_url     = 'https://github.com/shalomb/inji/tarball/{}'.format(__version__),
         packages         = setuptools.find_packages(),
         scripts          = [ 'bin/inji' ],
         install_requires = requirements_dev,
@@ -85,7 +86,7 @@ setuptools.setup(
         long_description_content_type = 'text/markdown',
         long_description = long_description,
         keywords         = [ 'jinja', 'jinja2', 'templating' ],
-        classifiers=[
+        classifiers      = [
             'Development Status :: 4 - Beta',
             'Environment :: Console',
             'Intended Audience :: Developers',
@@ -96,8 +97,8 @@ setuptools.setup(
             'Topic :: Software Development',
             'Topic :: System :: Systems Administration'
         ],
-        cmdclass = {
+        cmdclass         = {
             'requirements': RequirementsCommand,
-            'version': VersionCommand,
+            'version':      VersionCommand,
         }
     )
