@@ -10,7 +10,20 @@ import sys
 import os
 import csv
 
+# TODO
+# Encapsulating filters in this way is great but it does little for their
+# test coverage (nice trick to fool pycoverage eh!)
+# Set these up for proper unit (not end-to-end) tests.
+
 filters = dict(
+
+  env_override = (
+  """
+    Allow for a value set in the environment to override a given value
+    e.g. url | env_override("URL")
+    """,
+    lambda v, k: os.getenv(k, v)
+  ),
 
   format_dict = (
   """
@@ -28,6 +41,13 @@ filters = dict(
     lambda v, f: f.format(*v)
   ),
 
+  items = ( """
+    Select items specified by indexes from the list passed in
+    e.g. range(1,10) | items(0,2,5,-3,-2)
+    """,
+    lambda *n: list(n[0][x] for x in n[1:])
+  ),
+
   keys = (
     """
     Return the keys of a dict passed in
@@ -40,13 +60,6 @@ filters = dict(
     Return the values of a dict passed in
     """,
     lambda d: d.values()
-  ),
-
-  items = ( """
-    Select items specified by indexes from the list passed in
-    e.g. range(1,10) | items(0,2,5,-3,-2)
-    """,
-    lambda *n: list(n[0][x] for x in n[1:])
   ),
 
   wrap = ( """
