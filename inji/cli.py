@@ -15,7 +15,6 @@ import os
 from   os.path import abspath, dirname, join
 import pkg_resources
 import re
-from setproctitle import setproctitle
 import shutil
 import signal
 import sys
@@ -103,9 +102,6 @@ def main():
 
   # cleanly handle ctrl-c's
   signal.signal(signal.SIGINT, sigint_handler)
-
-  # set process name
-  setproctitle('inji')
 
   assert sys.version_info >= (3,5), 'Python version ({}.{} !>= 3.5)'.format(
     sys.version_info.major,

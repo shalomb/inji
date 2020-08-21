@@ -15,7 +15,6 @@ if any( x in ['requirements', 'version'] for x in sys.argv ):
 requirements_dev = '''
 jinja2==2.11.*
 pyyaml==5.3.*
-setproctitle
 '''.strip().split('\n')
 
 requirements_test = '''
