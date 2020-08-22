@@ -77,7 +77,7 @@ filters = dict(
   to_date = ( """ For a given string, try and parse the date """,
     # NOTE This isn't resilient against leapseconds
     # https://stackoverflow.com/questions/1697815/how-do-you-convert-a-time-struct-time-object-into-a-datetime-object#comment31967564_1697838
-    lambda v, f='%Y-%m-%d %H:%M:%S.%f': datetime( *(time.strptime(v, f)[:5]) )
+    lambda v, f='%Y-%m-%d %H:%M:%S.%f': datetime( *(time.strptime(v, f)[:6]) )
   ),
 
   to_url = ( """

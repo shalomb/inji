@@ -5,7 +5,7 @@
 import atexit
 import json
 import os
-from   os.path import abspath, dirname, join
+from   os.path import abspath, dirname, exists, join
 import pytest
 import re
 import shutil
@@ -13,12 +13,13 @@ import signal
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 
 import inji
 
 # The location of the inji CLI entry point
-injicmd = inji.cli_location
+injicmd = inji.cli_location if exists(inji.cli_location) else 'inji'
 
 def check_output(*args, **kwargs):
   os.environ['PYTHONUNBUFFERED'] = "1"
@@ -393,6 +394,49 @@ class TestInjiCmd(unittest.TestCase):
         injicmd, file_from_text("""{{ 42 is is_prime }}"""),
       ) == "False\n"
 
+  def test_globals_markdown(self):
+    """ Test that markdown content can be loaded """
+    md_file = file_from_text(textwrap.dedent('''\
+    # Heading
+
+    Paragraph
+
+    - List item
+
+    ```python
+    print(42)
+    ```
+
+    ~~~~{.python hl_lines="1 3"}
+    print(42)
+    ~~~~
+    '''))
+    output = check_output(
+        injicmd, file_from_text("""{{{{ markdown('{}') }}}}""".format(md_file)),
+    )
+    print(output)
+    assert re.search( 'h1.*>Heading', output )
+    assert re.search( 'p>Paragraph', output )
+    assert re.search( 'li>List item', output )
+    assert re.search( 'pre><code class="python">print\(42\)', output )
+
+  def test_globals_markdown_extensions(self):
+    """ Test that markdown content can be loaded """
+    md_file = file_from_text(textwrap.dedent('''\
+    ~~~~{.python hl_lines="1 3"}
+    v=42
+    s=str(v)
+    print(s)
+    ~~~~
+    '''))
+    output = check_output(
+        injicmd,
+        file_from_text("""
+          {{{{ markdown('{}', extensions=['codehilite', 'extra']) }}}}
+          """.format(md_file)),
+    )
+    assert re.search( 'class="codehilite".*42', output )
+
   def test_globals_run(self):
     """ Test the use of the run global function """
     assert re.search( '^\.$',
@@ -418,5 +462,5 @@ class TestInjiCmd(unittest.TestCase):
       assert proc.returncode == -1 * signal.SIGINT # SIGINT == 2
 
 if __name__ == '__main__':
-  TestInjiCmd().test_globals_strftime()
+  TestInjiCmd().test_globals_markdown_extensions()
 

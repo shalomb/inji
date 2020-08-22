@@ -7,6 +7,7 @@ from os.path import abspath, basename, dirname, exists, expandvars, isdir, isfil
 import json
 import os
 import fnmatch
+import subprocess
 import sys
 import yaml
 
@@ -80,3 +81,11 @@ def file_or_stdin(file):
   if file == '-' or file == '/dev/stdin':
     return '-'
   return path(file)
+
+
+def cmd(args):
+  return subprocess.check_output(args.split(' ')).decode('utf-8').strip()
+
+def load_file(file):
+  return open(file, encoding='utf-8').read().strip()
+

@@ -7,11 +7,13 @@
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-global-functions
 
 from datetime import datetime, timezone
-import subprocess
+import inspect
+import markdown as _markdown
+import platform as _platform
 import socket
 import sys
-import platform as _platform
-import inspect
+
+from . import utils
 
 def _os_release(k=None):
   ret = {}
@@ -19,9 +21,6 @@ def _os_release(k=None):
     k,v = line.split('=', 1)
     ret[k] = v.strip('"')
   return ret
-
-def _cmd(args):
-  return subprocess.check_output(args.split(' ')).decode('utf-8').strip()
 
 """
 _globals contains the dictionary of functions (implemented as lambda functions)
@@ -34,7 +33,7 @@ _globals = dict(
   ),
 
   host_id = ( """ Return the host's ID """,
-    lambda : _cmd('hostid')
+    lambda : utils.cmd('hostid')
   ),
 
   fqdn = ( """ Return the current host's fqdn """,
@@ -46,7 +45,34 @@ _globals = dict(
   ),
 
   machine_id = ( """ Return the machine's ID """,
-    open('/etc/machine-id').read().strip()  # variable
+    lambda :  utils.load_file('/var/lib/dbus/machine-id') or
+              utils.load_file('/etc/machine-id')
+  ),
+
+  markdown = ( """ Load content from a markdown file and convert it to html """,
+    lambda f,
+      output_format='html5',
+      extensions=[
+        'admonition',
+        'extra',
+        'meta',
+        'sane_lists',
+        'smarty',
+        'toc',
+        'wikilinks',
+        'wikilinks',
+      ],
+      extension_configs = {
+        'codehilite': {
+          'linenums': True,
+          'guess_lang': False,
+        }
+      }
+    : _markdown.markdown(
+        utils.load_file(f),
+        extensions=extensions,
+        output_format=output_format
+      )
   ),
 
   now  = ( """ Return the timestamp for datetime.now() """,
@@ -70,7 +96,7 @@ _globals = dict(
     Run a command and return its STDOUT
     e.g. hello {{ run('id -un') }}
     """,
-    lambda v: _cmd(v)
+    lambda v: utils.cmd(v)
   ),
 
 )
