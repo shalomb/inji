@@ -393,11 +393,19 @@ class TestInjiCmd(unittest.TestCase):
         injicmd, file_from_text("""{{ 42 is is_prime }}"""),
       ) == "False\n"
 
+  def test_globals_run(self):
+    """ Test the use of the run global function """
+    assert re.search( '^\.$',
+      check_output(
+        injicmd, file_from_text("""{{ run('ls -d') }}"""),
+      )
+    )
+
   def test_globals_strftime(self):
     """ Test the use of the strftime global function """
     assert re.search( '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
       check_output(
-        injicmd, file_from_text("""{{ strftime("%FT%T") }}"""),
+        injicmd, file_from_text("""{{ date | strftime("%FT%T") }}"""),
       )
     )
 

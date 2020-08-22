@@ -5,10 +5,13 @@
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-filters
 # https://www.webforefront.com/django/usebuiltinjinjafilters.html
 
+from datetime import datetime, timezone
+import ast
+import csv
+import os
 import re
 import sys
-import os
-import csv
+import time
 
 # TODO
 # Encapsulating filters in this way is great but it does little for their
@@ -41,6 +44,18 @@ filters = dict(
     lambda v, f: f.format(*v)
   ),
 
+  from_csv = (
+    """
+    Split a string delimited by commas and return items in a list.
+    e.g. (foo,) | from_csv  # note the (foo,) as csv.reader is expecting lines
+    """,
+    lambda v: list(csv.reader(v))[0]  # magic number is for single line of text
+  ),
+
+  from_literal = ( """ Parse a string using ast.literal_eval() """,
+    lambda v: ast.literal_eval(v)
+  ),
+
   items = ( """
     Select items specified by indexes from the list passed in
     e.g. range(1,10) | items(0,2,5,-3,-2)
@@ -53,6 +68,24 @@ filters = dict(
     Return the keys of a dict passed in
     """,
     lambda d: d.keys()
+  ),
+
+  strftime = ( """ For a given date, return a date string in strftime(3) format """,
+    lambda v, f='%F %T%z', tz='UTC': v.strftime(f),
+  ),
+
+  to_date = ( """ For a given string, try and parse the date """,
+    # NOTE This isn't resilient against leapseconds
+    # https://stackoverflow.com/questions/1697815/how-do-you-convert-a-time-struct-time-object-into-a-datetime-object#comment31967564_1697838
+    lambda v, f='%Y-%m-%d %H:%M:%S.%f': datetime( *(time.strptime(v, f)[:5]) )
+  ),
+
+  to_url = ( """
+    Take values from a dict passed in and
+    return a string formatted in the form of a URL
+    """,
+    lambda v, f='https://{hostname}':
+                  f.format(**v)
   ),
 
   values = (
@@ -68,18 +101,6 @@ filters = dict(
     lambda v, t='()': '{}{}{}'.format(t[0], v, t[1])
   ),
 
-  to_csv = ( """
-    Split a string delimited by commas and return items in a list
-    """,
-    lambda v: list(csv.reader(v))[0]  # magic number is for single line of text
-  ),
-
-  to_url = ( """
-    Take values from a dict passed in and
-    return a string formatted in the form of a URL
-    """,
-    lambda v, f='https://{hostname}':
-                  f.format(**v) ),
 )
 
 if 'USE_ANSIBLE_SUPPORT' in os.environ.keys():

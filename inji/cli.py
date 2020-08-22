@@ -6,6 +6,7 @@
 
 # inji - Render jina2 templates to stdout
 
+import ast
 import argparse
 import atexit
 import fnmatch
