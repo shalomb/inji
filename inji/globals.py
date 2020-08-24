@@ -6,12 +6,15 @@
 # https://jinja.palletsprojects.com/en/2.11.x/api/#the-global-namespace
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-global-functions
 
+import builtins
 from datetime import datetime, timezone
+import json
 import inspect
 import markdown as _markdown
 import platform as _platform
 import socket
 import sys
+import re
 
 from . import utils
 
@@ -28,12 +31,56 @@ or variables (regular values) that are accessible inside template expressions.
 """
 _globals = dict(
 
+  bacon_ipsum = ( """ Return N paragraphs of bacon-ipsum """,
+    lambda n=3: utils.get(
+      'https://baconipsum.com/api/?type=all-meat&paras={}&start-with-lorem=1&format=html'.format(n)
+    )
+  ),
+
+  cat  = ( """ Read a file in """,
+    lambda *n: [ utils.load_file(x) for x in n ]
+  ),
+
   date  = ( """ Return the timestamp for datetime.now() """,
     datetime.now()  # variable
   ),
 
+  git_branch = ( """ Return the current git branch of HEAD """,
+    lambda : utils.cmd(f"git rev-parse --abbrev-ref HEAD")
+  ),
+
+  GET = ( """ Issue a HTTP GET request against URL returning body content or an object if the response was JSON """,
+    lambda url='http://httpbin.org/anything':
+      utils.get(url)
+  ),
+
+  git_commit_id = ( """ Return the git commit ID of HEAD """,
+    lambda fmt='%h': utils.cmd(f"git log --pretty=format:{fmt} -n 1 HEAD")
+  ),
+
+  git_remote_url = ( """ Return the URL of the named origin """,
+    lambda origin='origin': utils.cmd(f'git remote get-url {origin}')
+  ),
+
+  git_remote_url_http = ( """ Return the HTTP URL of the named origin """,
+    lambda origin='origin':
+        re.sub( 'git@(.*):', 'https://\\1/', git_remote_url() ),
+  ),
+
+  git_tag = ( """ Return the value of git describe --tag --always """,
+    lambda fmt='current':
+      utils.cmd('git describe --tag --always') if fmt=='current' else
+      re.sub( '-[A-Fa-fg0-9\-]+$', '',
+        utils.cmd('git describe --tag --always')
+      )
+  ),
+
   host_id = ( """ Return the host's ID """,
     lambda : utils.cmd('hostid')
+  ),
+
+  int = ( """ Cast value as an int """,
+    lambda v: builtins.int(v)
   ),
 
   fqdn = ( """ Return the current host's fqdn """,
@@ -97,6 +144,11 @@ _globals = dict(
     e.g. hello {{ run('id -un') }}
     """,
     lambda v: utils.cmd(v)
+  ),
+
+  whatismyip = ( """ Determine and return the host's external IP """,
+    lambda url='http://httpbin.org/ip':
+      json.loads(utils.get(url))['origin']
   ),
 
 )

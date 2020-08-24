@@ -17,6 +17,8 @@ requirements_dev = '''
 jinja2==2.11.*
 pyyaml==5.3.*
 markdown==3.2.*
+requests>=2.24
+python-tr
 '''.strip().split('\n')
 
 requirements_test = '''

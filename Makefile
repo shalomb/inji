@@ -42,8 +42,8 @@ help: ## Show make targets available
 	@ grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s - %s\n", $$1, $$2}'
 
-install: venv-deps ## Installs this package
-	python3 -m pip install ./
+install: ## Installs this package
+	$(shell which python) -m pip install ./
 
 _install-e:
 	$(pip) install -e ./

@@ -7,6 +7,7 @@ from os.path import abspath, basename, dirname, exists, expandvars, isdir, isfil
 import json
 import os
 import fnmatch
+import requests
 import subprocess
 import sys
 import yaml
@@ -89,3 +90,10 @@ def cmd(args):
 def load_file(file):
   return open(file, encoding='utf-8').read().strip()
 
+def get(url):
+  response = requests.get(url)
+  if response.headers['Content-Type'] == 'application/json':
+    ret = response.json()
+  else:
+    ret = response.content.decode('utf8')
+  return ret

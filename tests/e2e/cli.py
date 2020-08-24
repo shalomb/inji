@@ -369,7 +369,7 @@ class TestInjiCmd(unittest.TestCase):
       ]
     )
 
-  def test_filters_format_dict(self):
+  def test_filters_get_and_format_dict(self):
     """ Test the use of the format_dict filter """
     os.environ['USE_ANSIBLE_SUPPORT'] = '1'
     assert check_output(
@@ -381,6 +381,28 @@ class TestInjiCmd(unittest.TestCase):
             }}"""),
           ) == "scheme=https hostname=google.com path=/webhp\n"
     os.environ.pop('USE_ANSIBLE_SUPPORT')
+
+  def test_filters_get_json(self):
+    """ Test the use of the GET filter to return a python object """
+    assert re.search( 'myscheme://.*/GET', check_output(
+        injicmd,
+          '-k', 'url=https://httpbin.org/anything',
+          file_from_text("""{{
+            GET(url) | format_dict('myscheme://{origin}/{method}')
+          }}"""),
+        )
+    )
+
+  def test_filters_get_text(self):
+    """ Test the use of the GET filter to return text """
+    assert re.search( 'Simple webservice echo test', check_output(
+        injicmd,
+          '-k', 'url=http://scooterlabs.com/echo',
+          file_from_text("""{{
+            GET(url)
+          }}"""),
+        )
+    )
 
   def test_tests_is_prime(self):
     """ Test the use of the is_prime test """
