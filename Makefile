@@ -28,7 +28,7 @@ define venv
 
 endef
 
-.PHONY: all clean venv version
+.PHONY: all clean venv version requirements.txt
 
 default: help
 
@@ -99,7 +99,7 @@ requirements: ## Install dev/runtime requirements
 
 requirements.txt: ## Create requirements.txt from setup.py
 	# This is required by most CI systems
-	$(setup) requirements >> requirements.txt
+	$(setup) requirements > requirements.txt
 
 version: ## Derive new version number for a bump
 	@ ./setup.py version
@@ -125,4 +125,3 @@ test-durations: ## Run tests and report durations
 
 %: ## Fallback to nothing
 	@:
-
