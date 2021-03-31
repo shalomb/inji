@@ -467,6 +467,22 @@ class TestInjiCmd(unittest.TestCase):
       )
     )
 
+  def test_globals_whatismyip(self):
+    """ Test the use of the whatismyip global function """
+    assert re.search( '^\d+\.\d+\.\d+\.\d+$',
+      check_output(
+        injicmd, file_from_text("""{{ whatismyip() }}"""),
+      )
+    )
+
+  def test_globals_ip_api(self):
+    """ Test the use of the ip_api global function """
+    assert re.search( '^\d+\.\d+\.\d+\.\d+$',
+      check_output(
+        injicmd, file_from_text("""{{ ip_api('query') }}"""),
+      )
+    )
+
   def test_globals_strftime(self):
     """ Test the use of the strftime global function """
     assert re.search( '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
@@ -485,4 +501,3 @@ class TestInjiCmd(unittest.TestCase):
 
 if __name__ == '__main__':
   TestInjiCmd().test_globals_markdown_extensions()
-

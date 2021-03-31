@@ -64,15 +64,18 @@ _globals = dict(
 
   git_remote_url_http = ( """ Return the HTTP URL of the named origin """,
     lambda origin='origin':
-        re.sub( 'git@(.*):', 'https://\\1/', git_remote_url() ),
+      re.sub( 'git@(.*):', 'https://\\1/',
+        utils.cmd(f'git remote get-url {origin}')
+      ),
   ),
 
   git_tag = ( """ Return the value of git describe --tag --always """,
     lambda fmt='current':
-      utils.cmd('git describe --tag --always') if fmt=='current' else
-      re.sub( '-[A-Fa-fg0-9\-]+$', '',
-        utils.cmd('git describe --tag --always')
-      )
+      utils.cmd('git describe --tag --always') if
+        fmt=='current' else
+        re.sub( '-[A-Fa-fg0-9\-]+$', '',
+          utils.cmd('git describe --tag --always')
+        )
   ),
 
   host_id = ( """ Return the host's ID """,
@@ -146,9 +149,13 @@ _globals = dict(
     lambda v: utils.cmd(v)
   ),
 
-  whatismyip = ( """ Determine and return the host's external IP """,
-    lambda url='http://httpbin.org/ip':
-      json.loads(utils.get(url))['origin']
+  ip_api = ( """ Return an attribute from the http://ip-api.com/json response object (i.e. status, country, countryCode, region, regionName, city, zip, lat, lon, timezone, isp, org, as, query) """,
+    lambda key='country':
+      utils.ip_api(key)
+  ),
+
+  whatismyip = ( """ Return the host's public (IPv4) address """,
+    lambda : utils.whatismyip()
   ),
 
 )

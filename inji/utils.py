@@ -21,7 +21,6 @@ def json_parse(string):
     print(msg, file=sys.stderr)
     raise TypeError(msg)
 
-
 def kv_parse(string):
   """ Parse a string of the form foo=bar into a dictionary """
   try:
@@ -34,7 +33,6 @@ def kv_parse(string):
     raise
   return { key: val }
 
-
 def read_context(yaml_file):
   yaml_file = yaml_file.__str__()
   with open(yaml_file, 'r') as f:
@@ -45,7 +43,6 @@ def read_context(yaml_file):
     except TypeError as exc:
       raise exc
   return in_vars
-
 
 def recursive_iglob(rootdir='.', pattern='*'):
   for root, dirnames, filenames in os.walk(rootdir):
@@ -74,7 +71,6 @@ def path(fspath, type='file'):
 
   return fspath
 
-
 def file_or_stdin(file):
   # /dev/stdin is a special case allowing bash (and other shells?) to name stdin
   # as a file. While python should have no problem reading from it, we actually
@@ -82,7 +78,6 @@ def file_or_stdin(file):
   if file == '-' or file == '/dev/stdin':
     return '-'
   return path(file)
-
 
 def cmd(args):
   return subprocess.check_output(args.split(' ')).decode('utf-8').strip()
@@ -92,8 +87,14 @@ def load_file(file):
 
 def get(url):
   response = requests.get(url)
-  if response.headers['Content-Type'] == 'application/json':
+  if 'Content-Type' in response.headers and response.headers['Content-Type'] == 'application/json':
     ret = response.json()
   else:
     ret = response.content.decode('utf8')
   return ret
+
+def ip_api(key):
+  return json.loads(get('http://ip-api.com/json'))[key]
+
+def whatismyip():
+  return get('http://checkip.amazonaws.com/').strip()
