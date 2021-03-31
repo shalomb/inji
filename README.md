@@ -1,10 +1,10 @@
-![inji](./inji-logo.png)
+[![Pythons](https://img.shields.io/badge/python-3.5%E2%80%933.9%20%7C%20pypy-blue.svg)](.travis.yml)
+[![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=develop)](https://travis-ci.org/shalomb/inji)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=develop)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=develop)
+[![Code Coverage](https://scrutinizer-ci.com/g/shalomb/inji/badges/coverage.png?b=develop)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=develop)
+[![Code Intelligence Status](https://scrutinizer-ci.com/g/shalomb/inji/badges/code-intelligence.svg?b=develop)](https://scrutinizer-ci.com/code-intelligence)
 
-[![Pythons](https://img.shields.io/badge/python-3.6%E2%80%933.8%20%7C%20pypy-blue.svg)](.travis.yml)
-[![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=master)](https://travis-ci.org/shalomb/inji)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/shalomb/inji/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=master)
-[![Code Intelligence Status](https://scrutinizer-ci.com/g/shalomb/inji/badges/code-intelligence.svg?b=master)](https://scrutinizer-ci.com/code-intelligence)
+![inji](./inji-logo.png)
 
 Inji renders static
 [jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
@@ -21,7 +21,7 @@ usable pattern.
 ### Installation
 
 ```
-python3 -m pip install inji   #  or use pip3/pip, requires python3 >= 3.6
+python3 -m pip install inji   #  or use pip3/pip, requires python >= 3.6 (may work on 3.5)
 ```
 
 ### Usage
@@ -32,16 +32,16 @@ python3 -m pip install inji   #  or use pip3/pip, requires python3 >= 3.6
 $ system=$(< /etc/hostname)
 $ startime=$(date +%FT%T%z)
 
-$ echo '
-node : {{ node }}
-time : {{ time }}
-' | inji -k node="$system" -k time="$startime"
+$ echo 'Reporting from {{ node }}, it is now {{ time }}' \
+    | inji --k node="$system" -k time="$startime"
+Hello from leto, it is now 2021-03-29T09:54:56+0200
+
 ```
 
 Or from a file
 
 ```
-$ inji --template=jello-star-motd.j2 -k ... > /etc/motd
+$ inji jello-star-motd.j2 -k ... > /etc/motd
 ```
 
 ##### Render a template passing vars in a JSON object
@@ -54,7 +54,7 @@ node : {{ node.name }}
 time : {{ node.time }}
 ' > template.j2
 
-$ inji -t template.j2 -j '{
+$ inji template.j2 -j '{
   "node":{
     "name":"'$(</etc/hostname)'", // Note the "interpolation" of shell commands
     "time":"'$(date)'"            // here with the quoting.
@@ -66,11 +66,11 @@ $ inji -t template.j2 -j '{
 
 
 ```
-inji --template=motd.j2 --vars-file=production.yaml
+inji motd.j2 --vars-file=production.yaml
 ```
 
 vars files must contain valid
-([YAML documents](https://yaml.org/spec/1.2/spec.html#id2800132)
+[YAML documents](https://yaml.org/spec/1.2/spec.html#id2800132)
 and can hold either simple
 [scalars](https://yaml.org/spec/1.2/spec.html#id2760844)
 or
@@ -78,15 +78,19 @@ or
 Your jinja templates can then reference parameters/variables inside these
 varsfiles depending on your context.
 
-e.g.
+##### Multiple docker images from a single Dockerfile
 
-A typical case is building multiple docker images - without the assistance
-of a templating tool, you may have to keep and maintain several Dockerfiles
-and corresponding build commands for each image - but imagine the
-yucky prospects of maintaining that kind of
-[WET approach](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself#DRY_vs_WET_solutions).
+A trivial case is building multiple docker images from a base Dockerfile.
 
-Instead, to DRY things up, consider a templated Dockerfile like this
+Anyone who has maintained a project like this finds themselves having to
+maintain multiple Dockerfiles, one-per-image even though the differences
+between each Dockerfile are trivial. Such a
+[WET approach](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself#DRY_vs_WET_solutions)
+where copy-paste duplication is rife knows of painful maintenance
+when the structure of the Dockerfile has to change, etc.
+
+Instead, to [DRY](https://wiki.c2.com/?DontRepeatYourself) things up, consider
+how paramertrization or templating addresses the issue.
 
 ```
 $ cat Dockerfile.j2
@@ -116,7 +120,7 @@ RUN my-awesome-build-script {{ distribution }} {{ version }}
 ENTRYPOINT ["/opt/bin/myserv"]
 ```
 
-Then a Travis CI build job using inji would look like this.
+Then a CI build job (e.g. Travis CI) using inji would look like this.
 
 ```
 $ cat .travis.yml
@@ -151,7 +155,7 @@ before_script:
 
 script:
   - >
-    inji --template Dockerfile.j2 --kv-config ref="$CI_COMMIT_REF_NAME" |
+    inji Dockerfile.j2 --kv-config ref="$CI_COMMIT_REF_NAME" |
       docker build --pull --tag "myimage:$distribution-$version" -
   - docker push --all-tags "myimage"
 ...
@@ -160,10 +164,10 @@ script:
 ##### Render a template using variables from multiple vars files
 
 ```
-$ inji --template=nginx.conf.j2    \
+$ inji nginx.conf.j2             \
       --vars-file=web-tier.yaml  \
       --vars-file=eu-west-1.yaml \
-      --vars-file=prod.yaml  > /etc/nginx/sites-enabled/prod-eu-west-1.conf
+      --vars-file=prod.yaml    > /etc/nginx/sites-enabled/prod-eu-west-1.conf
 ```
 
 Here, variables from files specified later on the command-line
@@ -206,16 +210,17 @@ conf/
     └── sites.yaml
 3 directories, 9 files
 
-$ inji  --template=nginx.conf.j2 \  # here $CI_ENV is be some variable your CI system
+$ inji  nginx.conf.j2 \  # here $CI_ENV is be some variable your CI system
         --overlay="conf/$CI_ENV" \  # sets holding the name of the target deployment
         > nginx.conf                # e.g. dev, stage, prod
 ```
 
 ### Parameter sourcing and precedence order
 
-Parameters can be specified and sourced from multiple places.
-The order of parameters sourced and their precedence is 12-factor friendly
-and is done as set out here (from lowest-to-highest precedence).
+Parameters  (configuration)  can  be   specified  and  sourced  from  multiple
+sources. The  order of parameters  sourced and their precedence  is [12-factor
+friendly](https://12factor.net/config)  and  is done  as  set  out here  (from
+lowest-to-highest precedence).
 
 - Default configuration file (`.inji.y*ml` or `inji.y*ml`) in current directory.
 - Overlay directories - last file sorted alphabetically wins
@@ -225,7 +230,7 @@ and is done as set out here (from lowest-to-highest precedence).
 - CLI KV strings - last one specified wins
 - Template parameters - last one specified wins (Jinja2 order)
 
-### Fuller Example
+### Examples
 
 This is a very contrived example showing how to orient a `.gitlab-ci.yml`
 towards business workflows -
@@ -244,7 +249,7 @@ project:
 deployer:
   image: snowmobile-deployer:latest
 
-# This serves as a more succinct business abstract
+# This serves as the more succinct business abstract
 
 environments:
 
@@ -302,7 +307,7 @@ variables:
 
 {% for env in environments %}
 
-# {{ env.type }} Run tenant provisioning, runner setup on shared runner
+# {{ env.type }} Run infrastructure provisioning
 'provision:{{ env.name }}':
   stage: '{{ env.name }}:provision'
   environment:
@@ -321,7 +326,7 @@ variables:
   only: {{ env.branches }}
   {% endif %}
 
-# {{ env.type }} Run deployment
+# {{ env.type }} Run application deployment
 'deploy:{{ env.name }}':
   stage: '{{ env.name }}:deploy'
   # ...
@@ -344,8 +349,8 @@ variables:
 To then update the `.gitlab-ci.yml`, run inji with the above.
 
 ```
-$ inji -t .gitlab-ci.j2 \
-       -v .gitlab-ci.vars > .gitlab-ci.yml
+$ inji .gitlab-ci.j2 \
+       --vars-file .gitlab-ci.vars > .gitlab-ci.yml
 ```
 
 WARNING: Edits to the above files are not automatically reflected in
@@ -356,28 +361,39 @@ or
 [gitattribute filter](https://www.bignerdranch.com/blog/git-smudge-and-clean-filters-making-changes-so-you-dont-have-to/)
 , etc.
 
-e.g.
 ```
 $ cat .githooks/pre-commit
 #!/bin/sh
 
 set -e
 
-inji -t .gitlab-ci.j2 -v .gitlab-ci.vars > .gitlab-ci.yml
+source_update=0
+file_update=0
 
 # NOTE: git diff --exit-code ... returns 1 if file has changed
-if ! git diff --exit-code .gitlab-ci.yml; then
-  git add .gitlab-ci.yml &&
-    git commit --amend -C HEAD --no-verify
+git diff --exit-code .gitlab-ci.j2   || source_update=1
+git diff --exit-code .gitlab-ci.vars || source_update=1
+git diff --exit-code .gitlab-ci.yaml || file_update=1
+
+if [ "$file_update" = 1 ]; then
+  echo >&2 ".gitlab-ci.yaml updated without updating templates (.gitlab-ci.{j2,vars})"
+  exit 1
 fi
+
+[ "$source_update" = 0 ] && exit 0
+
+inji .gitlab-ci.j2 --vars-file .gitlab-ci.vars > .gitlab-ci.yaml
+
+git add .gitlab-ci.yaml &&
+  git commit --amend -C HEAD --no-verify
 ```
 
 ### Etymology
 
 Why the name inji?
 
-_inji_ is named in keeping of the UNIX tradition of short (memorable?)
- command names. In this case, it is a 4-letter near-anagram of _Jinja_.
+Apart from keeping to the UNIX tradition of short (memorable?)
+ command names, _inji_ is a 4-letter near-anagram of _Jinja_.
 
 [_inji_](https://en.wikipedia.org/wiki/Ginger#Etymology) (_/ɪndʒi:/_)
 also happens to be the Dravidian word and ostensibly the source of the
@@ -390,3 +406,6 @@ Only potential ideas so far - No commitment is made.
 * [ ] Read config from JSON/TOML files?
 * [ ] Manage collections of templates e.g. `*.j2`
 * [ ] Dry-run syntax checking
+* [ ] Document patterns driving the design and refactor docs
+* [ ] Document use of macros
+* [ ] Document use of vars collections

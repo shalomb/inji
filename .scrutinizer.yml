@@ -12,32 +12,34 @@ build:
   environment:
     python:
       virtualenv: true
+    redis: false
+  cache:
+    directories:
+      - ~/.analysis
+      - venv
   dependencies:
     override:
-      - pip install --upgrade pip coverage
-      - make venv-deps venv test-deps
-  tests:
-    override:
-      - bash -c 'source venv/bin/activate; make test-durations'
+      - echo 'Not installing requirements + package here'
   nodes:
-    tests: true
-    analysis:
-      project_setup:
-        override:
-          - 'true'
-      tests:
-        override:
-          - py-scrutinizer-run
-          - command: pylint-run
-            use_website_config: false
-    coverage:
-      tests:
-        override:
-          - command: bash -c 'source venv/bin/activate; make test-cov'
-            coverage:
-              file: '.coverage'
-              config_file: '.coveragerc'
-              format: 'py-cc'
+    tests:
+  tests:
+    before:
+      - pip install --upgrade pip coverage
+    override:
+
+      - command: py-scrutinizer-run
+        idle_timeout: 720
+
+      - command: pylint-run
+        idle_timeout: 720
+        use_website_config: false
+
+      - command: make venv test-deps install-editable test-cov
+        idle_timeout: 720
+        coverage:
+          file: '.coverage'
+          config_file: '.coveragerc'
+          format: 'py-cc'
 
 filter:
   excluded_paths:

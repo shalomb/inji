@@ -6,6 +6,7 @@ python:
   - 3.6
   - 3.7
   - 3.8
+  - 3.9-dev
 
 cache:
   pip: true
@@ -19,8 +20,9 @@ before_script:
   - make test-deps
 
 script:
-  - make test
-  - make test-cov
+  - make install-editable
+  - make test-durations test-cov
+  - make install-build run
 
 after_success:
   - true
