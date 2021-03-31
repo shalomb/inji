@@ -1,3 +1,9 @@
+0.5.1 2021-04-01T00:44:04
+-------------------------
+
+* Add global functions to help with public IP address detection
+* Update README.md to be a bit clearer (Still a major WIP)
+
 0.5.0 2020-08-17T15:06:12
 -------------------------
 
