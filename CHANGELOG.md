@@ -1,3 +1,9 @@
+0.5.1 2021-04-01T01:03:56
+-------------------------
+
+* Ensure more_itertools is a dependency that is installed in environments
+  where it might not already be present. e.g. Cloudflare pages build envs
+
 0.5.1 2021-04-01T00:44:04
 -------------------------
 
