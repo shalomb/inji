@@ -34,7 +34,7 @@ $ startime=$(date +%FT%T%z)
 
 $ echo 'Reporting from {{ node }}, it is now {{ time }}' \
     | inji --k node="$system" -k time="$startime"
-Hello from leto, it is now 2021-03-29T09:54:56+0200
+Reporting from leto, it is now 2021-03-29T09:54:56+0200
 
 ```
 
