@@ -80,7 +80,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name             = 'inji',
-    version          = version(),
+    version          = '0.5.3', #version(),
     description      = 'Render parametrized Jinja2 templates at the CLI',
     author           = 'Shalom Bhooshi',
     author_email     = 's.bhooshi@gmail.com',
