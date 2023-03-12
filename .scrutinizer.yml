@@ -12,6 +12,7 @@ build:
   environment:
     python:
       virtualenv: true
+      version: 3.11.1
     redis: false
   cache:
     directories:
