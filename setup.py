@@ -14,21 +14,22 @@ if any( x in ['requirements', 'version'] for x in sys.argv ):
     sys.argv.insert(1, '-q')
 
 requirements_dev = '''
-jinja2==2.11.*
+jinja2
 markdown==3.2.*
 more_itertools
 python-tr
-pyyaml==5.4.*
-requests>=2.24
+pyyaml
+requests
+MarkupSafe==2.0.1
 '''.strip().split('\n')
 
 requirements_test = '''
 ansible>=2.8
 cffi==1.14.2
-coverage==5.2.1
-pytest==6.0.1
-pytest-cov==2.10.1
-pytest-tap==3.1
+coverage
+pytest
+pytest-cov
+pytest-tap
 '''.strip().split('\n')
 
 # https://jichu4n.com/posts/how-to-add-custom-build-steps-and-commands-to-setuppy/
