@@ -150,7 +150,7 @@ class TestInjiCmd(unittest.TestCase):
 
     # test we are able to recursively source params
     # but also source from the default (low-precedence) config file relative to PWD
-    assert re.search('Hola \w+ from bella',
+    assert re.search(r'Hola \w+ from bella',
       check_output(
         injicmd,
           '-o', f"{tmpdir}/dev",
@@ -242,7 +242,7 @@ class TestInjiCmd(unittest.TestCase):
       exit_code=1,
       errors=[
         'UndefinedError',
-        'variable \W{4}bar\W{4} is undefined in template'
+        r'variable \W{4}bar\W{4} is undefined in template'
       ]
     )
 
@@ -440,7 +440,7 @@ class TestInjiCmd(unittest.TestCase):
     assert re.search( 'h1.*>Heading', output )
     assert re.search( 'p>Paragraph', output )
     assert re.search( 'li>List item', output )
-    assert re.search( 'pre><code class="python">print\(42\)', output )
+    assert re.search( r'pre><code class="language-python">print\(42\)', output )
 
   def test_globals_markdown_extensions(self):
     """ Test that markdown content can be loaded """
@@ -461,7 +461,7 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_globals_run(self):
     """ Test the use of the run global function """
-    assert re.search( '^\.$',
+    assert re.search( r'^\.$',
       check_output(
         injicmd, file_from_text("""{{ run('ls -d') }}"""),
       )
@@ -469,7 +469,7 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_globals_whatismyip(self):
     """ Test the use of the whatismyip global function """
-    assert re.search( '^\d+\.\d+\.\d+\.\d+$',
+    assert re.search( r'^\d+\.\d+\.\d+\.\d+$',
       check_output(
         injicmd, file_from_text("""{{ whatismyip() }}"""),
       )
@@ -477,7 +477,7 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_globals_ip_api(self):
     """ Test the use of the ip_api global function """
-    assert re.search( '^\d+\.\d+\.\d+\.\d+$',
+    assert re.search( r'^\d+\.\d+\.\d+\.\d+$',
       check_output(
         injicmd, file_from_text("""{{ ip_api('query') }}"""),
       )
@@ -485,7 +485,7 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_globals_strftime(self):
     """ Test the use of the strftime global function """
-    assert re.search( '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
+    assert re.search( r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}',
       check_output(
         injicmd, file_from_text("""{{ date | strftime("%FT%T") }}"""),
       )

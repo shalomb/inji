@@ -73,7 +73,7 @@ _globals = dict(
     lambda fmt='current':
       utils.cmd('git describe --tag --always') if
         fmt=='current' else
-        re.sub( '-[A-Fa-fg0-9\-]+$', '',
+        re.sub( r'-[A-Fa-fg0-9\-]+$', '',
           utils.cmd('git describe --tag --always')
         )
   ),
