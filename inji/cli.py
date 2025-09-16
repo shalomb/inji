@@ -14,7 +14,7 @@ import json
 import locale
 import os
 from   os.path import abspath, dirname, join
-import pkg_resources
+from importlib.metadata import version
 import re
 import shutil
 import signal
@@ -31,7 +31,10 @@ def cli_location():
   return abspath(join(pkg_location(), '../bin/inji'))
 
 def _version():
-  return pkg_resources.require(__package__)[0].version
+  try:
+    return version(__package__)
+  except Exception:
+    return "unknown"
 
 __version__ = _version()
 
