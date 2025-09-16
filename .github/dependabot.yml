@@ -1,0 +1,79 @@
+# Dependabot configuration for inji
+# See https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Monitor pyproject.toml for Python package updates
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "shalomb"
+    assignees:
+      - "shalomb"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group related updates together to reduce PR noise
+    groups:
+      security-updates:
+        patterns:
+          - "jinja2"
+          - "pyyaml" 
+          - "requests"
+          - "markdown"
+          - "markupsafe"
+        update-types:
+          - "minor"
+          - "patch"
+      test-dependencies:
+        patterns:
+          - "pytest*"
+          - "coverage"
+          - "ansible*"
+        update-types:
+          - "minor"
+          - "patch"
+      build-dependencies:
+        patterns:
+          - "setuptools"
+          - "wheel"
+          - "tomli"
+        update-types:
+          - "minor"
+          - "patch"
+    # Only auto-merge patch updates for security-critical packages
+    # Major/minor updates should be reviewed manually
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "indirect"
+        update-type: "security"
+
+  # Monitor GitHub Actions for updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "shalomb"
+    assignees:
+      - "shalomb"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
