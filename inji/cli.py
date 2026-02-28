@@ -27,9 +27,6 @@ from . import utils
 def pkg_location():
   return abspath(dirname(__file__))
 
-def cli_location():
-  return abspath(join(pkg_location(), '../bin/inji'))
-
 def _version():
   try:
     return version(__package__)
