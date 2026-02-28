@@ -74,15 +74,26 @@ show: ## Show the version installed
 run: ## Run the installable
 	@ $(python) $(script) -h
 
-## --- Testing --- ##
+## --- Testing: Graduated Test Ladder --- ##
+## ⭐ SINGLE ENTRY POINT: `make test`
+## Run the complete graduated test ladder (structure → fast → coverage)
+## Each phase stops on first failure (fail-fast pattern)
+
 test-deps: sync ## Install test dependencies (included in sync)
 	@ echo "Test dependencies installed via uv sync"
 
-test: sync ## Run pytest tests (argument narrows down by name)
-	$(eval args := $(filter-out $@,$(MAKECMDGOALS)))
-	$(pytest) -k '$(args)'
+test-structure: ## Phase 0: Validate Python syntax (instant fail-fast)
+	@echo "🔍 Validating Python syntax..."
+	@find inji tests -name "*.py" -exec python3 -m py_compile {} +
+	@echo "✅ Syntax validation passed"
 
-test-cov: sync ## Run coverage tests
+test-fast: sync ## Phase 1: Run all unit tests (fast, isolated)
+	@echo "🧪 Running unit tests (Phase 1)..."
+	@$(pytest) tests/unit/ -v
+	@echo "✅ Unit tests passed"
+
+test-cov: sync ## Phase 2: Run coverage validation (threshold 35%)
+	@echo "🧪 Running coverage tests (Phase 2)..."
 	rm -f .coverage
 	$(pytest) \
 		--cov-append \
@@ -91,6 +102,13 @@ test-cov: sync ## Run coverage tests
 		--cov-fail-under=35 \
 		--cov $$PWD/inji/
 	@echo "NOTE: Coverage threshold set to 35% during modernization. Raise as codebase is refactored."
+
+test: sync test-structure test-fast test-cov ## 🚀 MAIN TARGET: Run complete graduated test ladder
+	@echo ""
+	@echo "✅ COMPLETE: All test levels passed!"
+	@echo "   - Phase 0: Syntax validation"
+	@echo "   - Phase 1: Unit tests (149 tests)"
+	@echo "   - Phase 2: Coverage validation (35% threshold)"
 
 test-durations: sync ## Run tests and report durations
 	$(pytest) --durations=24

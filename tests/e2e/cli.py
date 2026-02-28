@@ -19,7 +19,9 @@ import unittest
 import inji
 
 # The location of the inji CLI entry point
-injicmd = inji.cli_location if exists(inji.cli_location) else 'inji'
+# Note: modern pyproject.toml uses [project.scripts], so 'inji' is available
+# as a command via `uv tool install` or in the venv
+injicmd = 'inji'
 
 def check_output(*args, **kwargs):
   os.environ['PYTHONUNBUFFERED'] = "1"
