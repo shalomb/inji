@@ -113,7 +113,7 @@ version: ## Get version from git or pyproject.toml
 clean: ## Wipe the workspace clean
 	test -e "$(git)" && $(git) checkout version || true
 	find ./ -depth '(' -type d -iname __pycache__ -o -type f -iname '.*.sw?' ')' -exec rm -fr {} +
-	rm -fr .coverage dist/ build/ .pytest_cache *.egg-info/ test*.tap .venv/ uv.lock || true
+	rm -fr .coverage dist/ build/ .pytest_cache *.egg-info/ test*.tap .venv/ || true
 
 requirements.txt: ## Generate requirements.txt from pyproject.toml (for CI compatibility)
 	$(uv) pip compile pyproject.toml -o requirements.txt
