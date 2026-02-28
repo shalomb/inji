@@ -90,6 +90,7 @@ test-cov: sync ## Run coverage tests
 		--cov-report=term-missing \
 		--cov-fail-under=35 \
 		--cov $$PWD/inji/
+	@echo "NOTE: Coverage threshold set to 35% during modernization. Raise as codebase is refactored."
 
 test-durations: sync ## Run tests and report durations
 	$(pytest) --durations=24
