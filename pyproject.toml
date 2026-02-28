@@ -54,6 +54,10 @@ build = [
     "twine",
     "build"
 ]
+security = [
+    "pip-audit>=2.6.0",
+    "safety>=3.0.0"
+]
 
 [tool.setuptools]
 packages = ["inji"]

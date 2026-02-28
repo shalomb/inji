@@ -24,15 +24,14 @@ jobs:
     - name: Install dependencies
       run: make sync
 
+    - name: Install security tools
+      run: uv sync --extra security
+
     - name: Run pip-audit for vulnerability scanning
-      run: |
-        uv add --dev pip-audit
-        uv run pip-audit --require-hashes --desc
+      run: uv run pip-audit --desc
 
     - name: Check for known security issues with safety
-      run: |
-        uv add --dev safety
-        uv run safety check --json || echo "Safety check completed with warnings"
+      run: uv run safety check --json
 
   dependency-review:
     runs-on: ubuntu-latest
