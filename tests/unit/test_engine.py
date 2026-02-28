@@ -78,6 +78,7 @@ class TestTemplateEngineRender:
         """Render simple template with context."""
         engine = TemplateEngine()
         template_path = Path(tmp_templates_dir) / 'hello.jinja2'
+        template_path.write_text('Hello {{ name }}!')
         
         output = list(engine.render(str(template_path), {'name': 'World'}))
         assert output[0] == 'Hello World!'
