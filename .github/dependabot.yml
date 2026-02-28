@@ -50,13 +50,6 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    # Only auto-merge patch updates for security-critical packages
-    # Major/minor updates should be reviewed manually
-    allow:
-      - dependency-type: "direct"
-        update-type: "security"
-      - dependency-type: "indirect"
-        update-type: "security"
 
   # Monitor GitHub Actions for updates
   - package-ecosystem: "github-actions"
