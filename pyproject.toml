@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "tomli>=1.2.0; python_version<'3.11'"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "inji"
@@ -62,10 +62,8 @@ security = [
     "safety>=3.0.0"
 ]
 
-[tool.setuptools]
+[tool.hatch.build.targets.wheel]
 packages = ["inji"]
-include-package-data = true
-zip-safe = false
 
 # ---------------------------------------------------------------------------
 # pytest
