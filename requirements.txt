@@ -1,6 +1,0 @@
-jinja2==2.11.*
-markdown==3.2.*
-more_itertools
-python-tr
-pyyaml==5.4.*
-requests>=2.24

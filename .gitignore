@@ -48,6 +48,7 @@ tags
 
 # Project
 build/
+bin/
 .coverage
 dev/
 dist/
@@ -56,6 +57,8 @@ dist/
 tmp/
 TODO.md
 venv/
+.venv/
 **/__pycache__
 **/__pycache__/*
 t/
+.codemap/

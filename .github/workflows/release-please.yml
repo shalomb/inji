@@ -1,0 +1,29 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # Reads Conventional Commits on every push to main.
+          # - Opens/updates a Release PR that bumps pyproject.toml version
+          #   and appends to CHANGELOG.md.
+          # - Merging the PR creates a GitHub Release + tag, which
+          #   triggers publish.yml to build and push to PyPI.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
