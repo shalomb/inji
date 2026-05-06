@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
-
 # hold global variables and functions for direct use in templates
 # https://jinja.palletsprojects.com/en/2.11.x/api/#the-global-namespace
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-global-functions

@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
-
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-filters
 # https://www.webforefront.com/django/usebuiltinjinjafilters.html
 

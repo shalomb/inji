@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
-
 # Hold custom jinja2 tests
 # https://jinja.palletsprojects.com/en/2.11.x/api/#custom-tests
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-tests

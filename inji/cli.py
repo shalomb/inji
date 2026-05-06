@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
-
 # NAME
 
 # inji - Render jina2 templates to stdout
