@@ -1,5 +1,5 @@
 jinja2==2.11.*
-markdown==3.2.*
+markdown==3.9.*
 more_itertools
 python-tr
 pyyaml==5.4.*
