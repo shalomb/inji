@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "inji"
-version = "0.6.0"
+version = "0.6.1"
 description = "Render parametrized Jinja2 templates at the CLI"
 authors = [
     { name = "Shalom Bhooshi", email = "s.bhooshi@gmail.com" }
