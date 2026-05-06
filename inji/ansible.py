@@ -3,58 +3,48 @@
 # -*- coding: utf-8 -*-
 
 import importlib
-import inspect
-import sys
 
 # mixin for ansible.plugins.filters.*
 
-class FilterModule(object):
 
-  def __init__(self):
-    self._filters = {}
+class FilterModule:
+    def __init__(self):
+        self._filters = {}
 
-  def filters(self):
+    def filters(self):
+        for spec in [
+            "ansible.plugins.filter.core",
+            "ansible.plugins.filter.mathstuff",
+            "ansible.plugins.filter.urls",
+            "ansible.plugins.filter.urlsplit",
+        ]:
+            mod = importlib.import_module(spec)
 
-    for spec in [
-        'ansible.plugins.filter.core',
-        'ansible.plugins.filter.mathstuff',
-        'ansible.plugins.filter.urls',
-        'ansible.plugins.filter.urlsplit',
-      ]:
+            if hasattr(mod, "FilterModule"):
+                _filters = mod.FilterModule().filters()
+                for k, v in _filters.items():
+                    self._filters.update({k: [f"{spec}.{k}", v]})
 
-      mod = importlib.import_module(spec)
+            del mod
+        return self._filters
 
-      if hasattr(mod, 'FilterModule'):
-        _filters = mod.FilterModule().filters()
-        for k,v in _filters.items():
-          self._filters.update( {
-            k: [ "{}.{}".format(spec, k), v ]
-          } )
 
-      del mod
-    return self._filters
+class TestModule:
+    def __init__(self):
+        self._tests = {}
 
-class TestModule(object):
+    def tests(self):
+        for spec in [
+            "ansible.plugins.test.core",
+            "ansible.plugins.test.files",
+            "ansible.plugins.test.mathstuff",
+        ]:
+            mod = importlib.import_module(spec)
 
-  def __init__(self):
-    self._tests = {}
+            if hasattr(mod, "TestModule"):
+                _tests = mod.TestModule().tests()
+                for k, v in _tests.items():
+                    self._tests.update({k: [f"{spec}.{k}", v]})
 
-  def tests(self):
-
-    for spec in [
-        'ansible.plugins.test.core',
-        'ansible.plugins.test.files',
-        'ansible.plugins.test.mathstuff',
-      ]:
-
-      mod = importlib.import_module(spec)
-
-      if hasattr(mod, 'TestModule'):
-        _tests = mod.TestModule().tests()
-        for k,v in _tests.items():
-          self._tests.update( {
-            k: [ "{}.{}".format(spec, k), v ]
-          } )
-
-      del mod
-    return self._tests
+            del mod
+        return self._tests

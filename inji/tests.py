@@ -6,34 +6,30 @@
 # https://jinja.palletsprojects.com/en/2.11.x/api/#custom-tests
 # https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-tests
 
-from jinja2 import is_undefined
-import re
-import sys
 import math
-import os
+import sys
+
 
 def _is_prime(n):
-  if n == 2:
+    if n == 2:
+        return True
+    for i in range(2, int(math.ceil(math.sqrt(n))) + 1):
+        if n % i == 0:
+            return False
     return True
-  for i in range(2, int(math.ceil(math.sqrt(n))) + 1):
-    if n % i == 0:
-      return False
-  return True
+
 
 tests = dict(
-
-  is_prime = ( """ Tests if a number is prime """,
-    lambda v: _is_prime(v)
-  ),
-
+    is_prime=(""" Tests if a number is prime """, lambda v: _is_prime(v)),
 )
 
 try:
-  import ansible
-  from .ansible import TestModule
-  tests.update(TestModule().tests())
-except ImportError:
-  pass
+    if __import__("importlib.util", fromlist=["find_spec"]).find_spec("ansible"):
+        from .ansible import TestModule
 
-for k,v in tests.items():
-  setattr(sys.modules[__name__], k, v[1])
+        tests.update(TestModule().tests())
+except Exception:
+    pass
+
+for k, v in tests.items():
+    setattr(sys.modules[__name__], k, v[1])
