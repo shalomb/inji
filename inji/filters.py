@@ -8,6 +8,7 @@
 import ast
 import builtins
 import csv
+from datetime import datetime
 import more_itertools
 import os
 import re
@@ -181,9 +182,19 @@ filters.update({
   ),
 })
 
-if 'USE_ANSIBLE_SUPPORT' in os.environ.keys():
+try:
+  import ansible
   from .ansible import FilterModule
   filters.update(FilterModule().filters())
+except ImportError:
+  pass
+
+# Re-apply inji's own strftime after ansible (which overwrites it with an
+# epoch-only variant). Inji's strftime accepts any datetime + strftime format.
+_inji_strftime = ( """ For a given date, return a date string in strftime(3) format """,
+  lambda v, f='%F %T%z', tz='UTC': v.strftime(f),
+)
+filters['strftime'] = _inji_strftime
 
 for k,v in filters.items():
   setattr(sys.modules[__name__], k, v[1])

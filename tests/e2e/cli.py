@@ -373,7 +373,6 @@ class TestInjiCmd(unittest.TestCase):
 
   def test_filters_get_and_format_dict(self):
     """ Test the use of the format_dict filter """
-    os.environ['USE_ANSIBLE_SUPPORT'] = '1'
     assert check_output(
         injicmd,
           '-k', 'url=https://google.com:443/webhp?q=foo+bar',
@@ -382,7 +381,6 @@ class TestInjiCmd(unittest.TestCase):
               format_dict('scheme={scheme} hostname={hostname} path={path}')
             }}"""),
           ) == "scheme=https hostname=google.com path=/webhp\n"
-    os.environ.pop('USE_ANSIBLE_SUPPORT')
 
   def test_filters_get_json(self):
     """ Test the use of the GET filter to return a python object """

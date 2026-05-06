@@ -23,8 +23,11 @@ class TemplateEngine(object):
 
   def __init__( self,
                 undefined_variables_mode_behaviour='strict',
-                j2_env_params={},
+                j2_env_params=None,
     ):
+
+    if j2_env_params is None:
+      j2_env_params = {}
 
     UndefinedHandler = StrictUndefined
     m = undefined_variables_mode_behaviour
