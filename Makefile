@@ -87,6 +87,22 @@ test-structure: ## Phase 0: Validate Python syntax (instant fail-fast)
 	@find inji tests -name "*.py" -exec python3 -m py_compile {} +
 	@echo "✅ Syntax validation passed"
 
+test-lint: sync ## Phase 0.5: Lint check with ruff (fast, zero-tolerance)
+	@echo "🔍 Running ruff lint check..."
+	$(uv) run ruff check inji/ tests/
+	@echo "🔍 Running ruff format check..."
+	$(uv) run ruff format --check inji/ tests/
+	@echo "✅ Lint check passed"
+
+lint: sync ## Run ruff linter (check only — no fixes)
+	$(uv) run ruff check inji/ tests/
+
+format: sync ## Auto-format source with ruff
+	$(uv) run ruff format inji/ tests/
+
+format-check: sync ## Check formatting without modifying files
+	$(uv) run ruff format --check inji/ tests/
+
 test-fast: sync ## Phase 1: Run all unit tests (fast, isolated)
 	@echo "🧪 Running unit tests (Phase 1)..."
 	@$(pytest) tests/unit/ -v
@@ -103,12 +119,13 @@ test-cov: sync ## Phase 2: Run coverage validation (threshold 35%)
 		--cov $$PWD/inji/
 	@echo "NOTE: Coverage threshold set to 35% during modernization. Raise as codebase is refactored."
 
-test: sync test-structure test-fast test-cov ## 🚀 MAIN TARGET: Run complete graduated test ladder
+test: sync test-structure test-lint test-fast test-cov ## 🚀 MAIN TARGET: Run complete graduated test ladder
 	@echo ""
 	@echo "✅ COMPLETE: All test levels passed!"
-	@echo "   - Phase 0: Syntax validation"
-	@echo "   - Phase 1: Unit tests (149 tests)"
-	@echo "   - Phase 2: Coverage validation (35% threshold)"
+	@echo "   - Phase 0:   Syntax validation"
+	@echo "   - Phase 0.5: Lint (ruff check + format)"
+	@echo "   - Phase 1:   Unit tests (149 tests)"
+	@echo "   - Phase 2:   Coverage validation (35% threshold)"
 
 test-durations: sync ## Run tests and report durations
 	$(pytest) --durations=24

@@ -101,7 +101,7 @@ filters = dict(
     push=(""" Append items to a list and return the list """, lambda *n: list(n[0]) + list(n[1:])),
     remove=(
         """ Remove first item x from list """,
-        lambda lst, *x: (lst if lst.remove(*x) is None else lst),
+        lambda lst, *x: lst if lst.remove(*x) is None else lst,
     ),
     shift=(""" Pop item at index 0 from an input list and return it """, lambda lst: lst.pop(0)),
     strftime=(

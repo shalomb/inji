@@ -27,6 +27,9 @@ jobs:
     - name: Install dependencies
       run: make sync
 
+    - name: Lint
+      run: make test-lint
+
     - name: Run tests
       run: make test
 

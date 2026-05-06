@@ -18,6 +18,24 @@ import markdown as _markdown
 
 from . import utils
 
+# Default extensions and config for the markdown global — extracted so ruff
+# can format the lambda without exceeding the 100-char line limit.
+_MD_EXTENSIONS = [
+    "admonition",
+    "extra",
+    "meta",
+    "sane_lists",
+    "smarty",
+    "toc",
+    "wikilinks",
+]
+_MD_EXTENSION_CONFIGS = {
+    "codehilite": {
+        "linenums": True,
+        "guess_lang": False,
+    }
+}
+
 
 def _os_release(k=None):
     ret = {}
@@ -25,6 +43,20 @@ def _os_release(k=None):
         k, v = line.split("=", 1)
         ret[k] = v.strip('"')
     return ret
+
+
+def _render_markdown(
+    f,
+    output_format="html5",
+    extensions=None,
+    extension_configs=None,
+):
+    """Load a markdown file and convert it to HTML."""
+    return _markdown.markdown(
+        utils.load_file(f),
+        extensions=extensions or _MD_EXTENSIONS,
+        output_format=output_format,
+    )
 
 
 """
@@ -67,9 +99,11 @@ _globals = dict(
     ),
     git_tag=(
         """ Return the value of git describe --tag --always """,
-        lambda fmt="current": utils.cmd("git describe --tag --always")
-        if fmt == "current"
-        else re.sub(r"-[A-Fa-fg0-9\-]+$", "", utils.cmd("git describe --tag --always")),
+        lambda fmt="current": (
+            utils.cmd("git describe --tag --always")
+            if fmt == "current"
+            else re.sub(r"-[A-Fa-fg0-9\-]+$", "", utils.cmd("git describe --tag --always"))
+        ),
     ),
     host_id=(""" Return the host's ID """, lambda: utils.cmd("hostid")),
     int=(""" Cast value as an int """, lambda v: builtins.int(v)),
@@ -81,26 +115,7 @@ _globals = dict(
     ),
     markdown=(
         """ Load content from a markdown file and convert it to html """,
-        lambda f,
-        output_format="html5",
-        extensions=[
-            "admonition",
-            "extra",
-            "meta",
-            "sane_lists",
-            "smarty",
-            "toc",
-            "wikilinks",
-            "wikilinks",
-        ],
-        extension_configs={
-            "codehilite": {
-                "linenums": True,
-                "guess_lang": False,
-            }
-        }: _markdown.markdown(
-            utils.load_file(f), extensions=extensions, output_format=output_format
-        ),
+        _render_markdown,
     ),
     now=(""" Return the timestamp for datetime.now() """, lambda: datetime.now()),
     os=(""" Dictionary holding the contents of /etc/os-release """, _os_release()),
