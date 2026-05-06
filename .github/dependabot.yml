@@ -27,7 +27,7 @@ updates:
       security-updates:
         patterns:
           - "jinja2"
-          - "pyyaml" 
+          - "pyyaml"
           - "requests"
           - "markdown"
           - "markupsafe"
@@ -39,14 +39,15 @@ updates:
           - "pytest*"
           - "coverage"
           - "ansible*"
+          - "ruff"
         update-types:
           - "minor"
           - "patch"
       build-dependencies:
         patterns:
-          - "setuptools"
-          - "wheel"
-          - "tomli"
+          - "hatchling"
+          - "twine"
+          - "build"
         update-types:
           - "minor"
           - "patch"
