@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Pre-commit hook for inji
+# Install: just install-hooks   (or cp .githooks/pre-commit .git/hooks/pre-commit)
+#
+# Phases (fast → slow, fail-fast):
+#   0   syntax     — py_compile, instant
+#   0.5 lint       — ruff check + format, <2s
+#   1   unit       — pytest tests/unit/, ~3s
+
+set -euo pipefail
+
+printf "pre-commit: inji checks\n"
+
+# ── Phase 0: syntax ────────────────────────────────────────────────────────
+printf "  0   syntax ... "
+if ! find inji tests -name "*.py" -exec python3 -m py_compile {} + 2>&1; then
+    printf "FAIL\n"
+    printf "      Fix syntax errors and try again.\n"
+    exit 1
+fi
+printf "ok\n"
+
+# ── Phase 0.5: lint ────────────────────────────────────────────────────────
+printf "  0.5 lint   ... "
+if ! uv run ruff check inji/ tests/ --output-format=concise 2>&1; then
+    printf "FAIL\n"
+    printf "      Run: just lint-fix   to auto-fix, then review.\n"
+    exit 1
+fi
+if ! uv run ruff format --check inji/ tests/ 2>&1; then
+    printf "FAIL\n"
+    printf "      Run: just fmt   to auto-format, then git add.\n"
+    exit 1
+fi
+printf "ok\n"
+
+# ── Phase 1: unit tests ────────────────────────────────────────────────────
+printf "  1   unit   ... "
+if ! uv run pytest tests/unit/ -q --tb=short 2>&1; then
+    printf "FAIL\n"
+    printf "      Run: just test-unit   for details.\n"
+    exit 1
+fi
+printf "ok\n"
+
+printf "pre-commit: all checks passed\n"
+exit 0

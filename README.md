@@ -2,410 +2,176 @@
 [![Build Status](https://travis-ci.org/shalomb/inji.svg?branch=develop)](https://travis-ci.org/shalomb/inji)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shalomb/inji/badges/quality-score.png?b=develop)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=develop)
 [![Code Coverage](https://scrutinizer-ci.com/g/shalomb/inji/badges/coverage.png?b=develop)](https://scrutinizer-ci.com/g/shalomb/inji/?branch=develop)
-[![Code Intelligence Status](https://scrutinizer-ci.com/g/shalomb/inji/badges/code-intelligence.svg?b=develop)](https://scrutinizer-ci.com/code-intelligence)
 
 ![inji](./inji-logo.png)
 
-Inji renders static
-[jinja2](https://jinja.palletsprojects.com/en/2.11.x/)
-templates.
+Inji renders static [Jinja2](https://jinja.palletsprojects.com/) templates right from the command line.
 
-Templates may be parametrized in which case inji can be given one or more
-YAML vars files to source parameters used in the templates.
-
-Useful in CI/CD scenarios where
-[DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
-configuration is necessary and templating/parametrization is a
-usable pattern.
+If you've ever found yourself maintaining ten nearly identical Dockerfiles, or wrestling with a massive 1,000-line CI/CD configuration file, you know the pain of copy-paste development. Inji fixes this. You hand it a template and some variables (from YAML, JSON, or your environment), and it generates the final file. No magic, just clean, DRY configuration.
 
 ### Installation
 
+```bash
+pip install inji
 ```
-python3 -m pip install inji   #  or use pip3/pip, requires python >= 3.6 (may work on 3.5)
-```
+*(Requires Python 3.6+)*
+
+### Why use this?
+
+Configuration files get messy fast. When you split them up or try to reuse them across different environments (dev, stage, prod), you usually end up copying and pasting the same boilerplate. Inji lets you use standard Jinja2 templating to keep your configuration sane and manageable.
 
 ### Usage
 
-##### Render a Jinja2 template
+#### The Basics
+Pass variables directly from the command line:
 
-```
-$ system=$(< /etc/hostname)
-$ startime=$(date +%FT%T%z)
-
+```bash
 $ echo 'Reporting from {{ node }}, it is now {{ time }}' \
-    | inji --k node="$system" -k time="$startime"
-Reporting from leto, it is now 2021-03-29T09:54:56+0200
-
+    | inji -k node="$(hostname)" -k time="$(date -u)"
+Reporting from leto, it is now Thu Mar 29 09:54:56 UTC 2021
 ```
 
-Or from a file
+Or render a file:
 
-```
-$ inji jello-star-motd.j2 -k ... > /etc/motd
-```
-
-##### Render a template passing vars in a JSON object
-
-JSON allows you to pass configuration in complex/multi-dimensional objects.
-
-```
-$ echo '
-node : {{ node.name }}
-time : {{ node.time }}
-' > template.j2
-
-$ inji template.j2 -j '{
-  "node":{
-    "name":"'$(</etc/hostname)'", // Note the "interpolation" of shell commands
-    "time":"'$(date)'"            // here with the quoting.
-  }
-}'
+```bash
+$ inji motd.j2 -k env="production" > /etc/motd
 ```
 
-##### Render a template passing vars from a YAML file
+#### YAML and JSON variables
+Typing out variables is fine for quick scripts, but you'll probably want to store them in files. 
 
-
+```bash
+$ inji nginx.conf.j2 --vars-file=production.yaml > nginx.conf
 ```
-inji motd.j2 --vars-file=production.yaml
+
+JSON works too, which is handy if you need to pass nested objects on the fly:
+
+```bash
+$ inji template.j2 -j '{"node": {"name": "leto", "role": "db"}}'
 ```
 
-vars files must contain valid
-[YAML documents](https://yaml.org/spec/1.2/spec.html#id2800132)
-and can hold either simple
-[scalars](https://yaml.org/spec/1.2/spec.html#id2760844)
-or
-[collections](https://yaml.org/spec/1.2/spec.html#id2759963).
-Your jinja templates can then reference parameters/variables inside these
-varsfiles depending on your context.
+#### Layering configurations
+Real-world deployments usually mean layering configs. Maybe you have a base web config, overridden by a specific region, which is then overridden by the production environment. Inji handles this gracefully: later files override earlier ones.
 
-##### Multiple docker images from a single Dockerfile
-
-A trivial case is building multiple docker images from a base Dockerfile.
-
-Anyone who has maintained a project like this finds themselves having to
-maintain multiple Dockerfiles, one-per-image even though the differences
-between each Dockerfile are trivial. Such a
-[WET approach](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself#DRY_vs_WET_solutions)
-where copy-paste duplication is rife knows of painful maintenance
-when the structure of the Dockerfile has to change, etc.
-
-Instead, to [DRY](https://wiki.c2.com/?DontRepeatYourself) things up, consider
-how paramertrization or templating addresses the issue.
-
+```bash
+$ inji nginx.conf.j2 \
+      --vars-file=web-tier.yaml \
+      --vars-file=eu-west-1.yaml \
+      --vars-file=prod.yaml > /etc/nginx/sites-enabled/prod-eu-west-1.conf
 ```
-$ cat Dockerfile.j2
-FROM {{ distribution }}:{{ version }}    # These jinja2 vars are set by inji
-                                         # from travis' environment variables
 
-MAINTAINER http://my.org/PlatformOps
+#### Overlay Directories
+If you have a bunch of small config files scattered in a directory (say, `conf/prod/`), you can just point Inji at the whole folder. It reads all the YAML files, merges them into one configuration object, and renders your template.
 
-ENV container       docker
+```bash
+$ inji nginx.conf.j2 --overlay="conf/prod" > nginx.conf
+```
+
+### Order of Precedence
+When you're pulling variables from everywhere, who wins? Inji follows a [12-factor-friendly](https://12factor.net/config) hierarchy. From lowest to highest priority:
+
+1. Default config file (`.inji.yaml` or `inji.yaml` in the current directory)
+2. Overlay directories (last file sorted alphabetically wins)
+3. Named `--vars-file` arguments (last one specified wins)
+4. Environment variables
+5. CLI JSON strings (`-j`)
+6. CLI key-value pairs (`-k`)
+7. Variables defined inside the Jinja2 template itself
+
+### Built-in Superpowers
+
+Inji isn't just plain Jinja2—it comes loaded with custom globals and filters out of the box so you don't have to keep piping through `sed`, `awk`, or `curl`.
+
+#### Environment & Git Context
+Need to tag a Docker image with the current git commit or branch? Inji has globals for that:
+
+```jinja
+VERSION: {{ git_tag() }}
+COMMIT: {{ git_commit_id() }}
+BRANCH: {{ git_branch() }}
+```
+
+#### OS & Network Introspection
+If you're generating configs on the fly inside a server or CI runner, you can tap directly into the host's environment:
+
+```jinja
+HOSTNAME: {{ hostname() }}
+PUBLIC_IP: {{ whatismyip() }}
+DISTRO: {{ os_release('PRETTY_NAME') }}
+```
+
+#### HTTP Requests & APIs
+You can even fetch JSON from an API directly inside your template using `GET()`:
+
+```jinja
+{% set my_ip_info = ip_api() %}
+REGION: {{ my_ip_info.regionName }}
+COUNTRY: {{ my_ip_info.country }}
+```
+
+#### Running Shell Commands
+Need something really specific? Just use the `run()` global to execute any shell command and capture its stdout:
+
+```jinja
+LOAD_AVERAGE: {{ run("uptime | awk '{print $10}'") }}
+```
+
+#### Custom Filters
+Inji bundles dozens of helpful list, string, and formatting filters to manipulate data cleanly inside your templates.
+
+```jinja
+# Extract specific keys from an environment variable fallback
+API_URL: {{ default_url | env_override("API_URL") }}
+
+# Parse CSV strings into lists
+{% set ports = "80,443,8080" | from_csv %}
+
+# Read a file's contents directly into a template variable
+{% set local_key = "id_rsa.pub" | cat %}
+```
+
+### Real-world Examples
+
+#### DRY Dockerfiles
+Instead of maintaining a separate `Dockerfile` for CentOS, Debian, and Fedora, write one `Dockerfile.j2`:
+
+```jinja
+FROM {{ distribution }}:{{ version }}
+
+ENV container docker
 ENV distribution {{ distribution }}
-ENV version      {{ version }}-{{ ref }} # `ref` is set at inji's CLI
+ENV version {{ version }}-{{ ref }}
 
-{% if distribution == 'centos' %}        # Conditional execution
+{% if distribution == 'centos' %}
 RUN yum -y update && yum clean all
-{% endif %}
-
-{% if distribution == 'debian' %}
+{% elif distribution == 'debian' %}
 RUN apt update -qq && apt upgrade -y
-{% endif %}
-
-{% if distribution == 'fedora' %}
+{% elif distribution == 'fedora' %}
 RUN dnf -y update && dnf clean all
 {% endif %}
 
 RUN my-awesome-build-script {{ distribution }} {{ version }}
-
 ENTRYPOINT ["/opt/bin/myserv"]
 ```
 
-Then a CI build job (e.g. Travis CI) using inji would look like this.
-
-```
-$ cat .travis.yml
----
-language: python
-sudo: required
-services:
-  - docker
-
-env:
-
-  - distribution: centos
-    version: 7
-
-  - distribution: centos
-    version: 8
-
-  - distribution: debian
-    version: stretch
-
-  - distribution: debian
-    version: buster
-
-  - distribution: fedora
-    version: 28
-
-  - distribution: fedora
-    version: 29
-
-before_script:
-  - pip install inji
-
-script:
-  - >
-    inji Dockerfile.j2 --kv-config ref="$CI_COMMIT_REF_NAME" |
-      docker build --pull --tag "myimage:$distribution-$version" -
-  - docker push --all-tags "myimage"
-...
+Then build it in your CI pipeline by passing the variables you need:
+```bash
+$ inji Dockerfile.j2 -k distribution=debian -k version=buster -k ref=$CI_COMMIT_REF_NAME | docker build --tag "myimage:debian-buster" -
 ```
 
-##### Render a template using variables from multiple vars files
+#### Dynamic CI/CD Pipelines
+You can even generate your `.gitlab-ci.yml` or GitHub Actions workflows dynamically. Define your environments in a `.vars` file and loop through them in a `.j2` template to stamp out identical jobs for dev, stage, and prod without duplicating all the YAML boilerplate. 
 
-```
-$ inji nginx.conf.j2             \
-      --vars-file=web-tier.yaml  \
-      --vars-file=eu-west-1.yaml \
-      --vars-file=prod.yaml    > /etc/nginx/sites-enabled/prod-eu-west-1.conf
-```
+If you do this, just remember to use a `pre-commit` hook to ensure your rendered `.yml` file always stays in sync with your `.j2` template.
 
-Here, variables from files specified later on the command-line
-will override those from files specified before
-(prod.yaml supercedes eu-west-1.yaml, etc).
-
-This is especially useful in managing layered configuration where different
-tiers of a deployment enforce/provide different parameters.
-
-##### Using directory configuration overlays
-
-An inevitable practice is using multiple smaller configuration files
-to avoid the growing pains of huge configuration files,
-to source configuration from different sources,
-improve churn, reduce friction, etc, etc, etc.
-Here, explicitly naming configuration files for inji to use becomes
-a new pain point.
-
-With overlay directories, inji naively reads in all yaml files from a directory
-and compiles a combined configuration object before using that in rendering
-a template.
-
-```
-$ tree conf/
-conf/
-├── dev
-│   ├── service-discovery.yaml
-│   ├── load-balancer-ip.yaml
-│   ├── modules.yaml
-│   └── sites.yaml
-├── prod
-│   ├── service-discovery.yaml
-│   ├── load-balancer-ip.yaml
-│   ├── modules.yaml
-│   └── sites.yaml
-└── stage
-    ├── service-discovery.yaml
-    ├── load-balancer-ip.yaml
-    ├── modules.yaml
-    └── sites.yaml
-3 directories, 9 files
-
-$ inji  nginx.conf.j2 \  # here $CI_ENV is be some variable your CI system
-        --overlay="conf/$CI_ENV" \  # sets holding the name of the target deployment
-        > nginx.conf                # e.g. dev, stage, prod
-```
-
-### Parameter sourcing and precedence order
-
-Parameters  (configuration)  can  be   specified  and  sourced  from  multiple
-sources. The  order of parameters  sourced and their precedence  is [12-factor
-friendly](https://12factor.net/config)  and  is done  as  set  out here  (from
-lowest-to-highest precedence).
-
-- Default configuration file (`.inji.y*ml` or `inji.y*ml`) in current directory.
-- Overlay directories - last file sorted alphabetically wins
-- Named configuration file - last one specified wins
-- Environmental variables - last one specified wins
-- CLI JSON strings - last one specified wins
-- CLI KV strings - last one specified wins
-- Template parameters - last one specified wins (Jinja2 order)
-
-### Examples
-
-This is a very contrived example showing how to orient a `.gitlab-ci.yml`
-towards business workflows -
-a multi-stage CI/CD deployment pipeline expedited by Gitlab.
-
-Note the use of complex objects in the parameters.
-
-```
-$ cat .gitlab-ci.vars
----
-project:
-  name: snowmobile
-  id:   https://gitlab.com/snowslope/snowmobile.git
-  url:  https://snowmobile.example.com/
-
-deployer:
-  image: snowmobile-deployer:latest
-
-# This serves as the more succinct business abstract
-
-environments:
-
-  - name: snowmobile-env_dev
-    type: dev
-    region: us-east-1
-    ci_url:  https://snowmobile-dev.env.example.com/
-    branches:
-      - /^[0-9]+\-.*/  # Match feature branches that have
-                       # a ticket number at the start of the branch name
-
-  - name: snowmobile-env_stage
-    type: stage
-    region: eu-west-2
-    ci_url:  https://snowmobile-stage.env.example.com/
-    branches:
-      - master         # Deploy to stage only after merge request is complete
-
-  - name: snowmobile-env_prod
-    type: production
-    region: eu-west-1
-    ci_url:  https://snowmobile.env.example.com/
-    branches:
-      - tags           # Only deploy tagged releases to production
-
-...
-```
-
-```
-$ cat .gitlab-ci.j2
----
-
-# >>>>>>>>>>>>>
-# >> WARNING >>   This file is autogenerated!!
-# >> !!!!!!! >>   Edit .gitlab-ci.{j2, vars} instead and `make gitlab-ci-yml`
-# >>>>>>>>>>>>>   All edits will be lost on the next update
-
-# This template when rendered with parameters from the above varsfile
-# produces the actual fuller .gitlab-ci.yml file
-
-stages:
-{% for env in environments %}
-  - '{{ env.name }}:provision'
-  - '{{ env.name }}:validate'
-  - '{{ env.name }}:deploy'
-  - '{{ env.name }}:test'
-  - '{{ env.name }}:destroy'
-{% endfor %}
-  - 'docs:publish'
-
-variables:
-  project:             {{  project.name }}
-  project_id:          '{{ project.id   }}'
-  project_url:         {{  project.url  }}
-
-{% for env in environments %}
-
-# {{ env.type }} Run infrastructure provisioning
-'provision:{{ env.name }}':
-  stage: '{{ env.name }}:provision'
-  environment:
-    name: {{ env.type }}/$SITE/$CI_COMMIT_REF_NAME
-    url:  {{ env.ci_url }}
-  variables:
-    SITE:                {{ env.name }}
-    CI_ENVIRONMENT_TYPE: {{ env.type }}
-    REGION:              {{ env.region }}
-    CI_URL:              {{ env.ci_url }}
-  image:  {{ deployer.image }}
-  script:
-    - snowmobile-ctl provision
-
-  {% if env.branches -%}
-  only: {{ env.branches }}
-  {% endif %}
-
-# {{ env.type }} Run application deployment
-'deploy:{{ env.name }}':
-  stage: '{{ env.name }}:deploy'
-  # ...
-  script:
-    - snowmobile-ctl deploy
-
-# {{ env.type }} Run smoke tests
-'test:{{ env.name }}':
-  stage: '{{ env.name }}:test'
-  # ...
-  script:
-    - snowmobile-ctl smoke-test
-
-{% endfor %}
-
-# vim:ft=yaml
-...
-```
-
-To then update the `.gitlab-ci.yml`, run inji with the above.
-
-```
-$ inji .gitlab-ci.j2 \
-       --vars-file .gitlab-ci.vars > .gitlab-ci.yml
-```
-
-WARNING: Edits to the above files are not automatically reflected in
-`.gitlab-ci.yml` and some other mechanism using inji to render the latter needs
-to be run before Gitlab acts upon it. e.g. Using a
-[git commit hook](https://git-scm.com/docs/githooks#_pre_commit)
-or
-[gitattribute filter](https://www.bignerdranch.com/blog/git-smudge-and-clean-filters-making-changes-so-you-dont-have-to/)
-, etc.
-
-```
-$ cat .githooks/pre-commit
-#!/bin/sh
-
-set -e
-
-source_update=0
-file_update=0
-
-# NOTE: git diff --exit-code ... returns 1 if file has changed
-git diff --exit-code .gitlab-ci.j2   || source_update=1
-git diff --exit-code .gitlab-ci.vars || source_update=1
-git diff --exit-code .gitlab-ci.yaml || file_update=1
-
-if [ "$file_update" = 1 ]; then
-  echo >&2 ".gitlab-ci.yaml updated without updating templates (.gitlab-ci.{j2,vars})"
-  exit 1
-fi
-
-[ "$source_update" = 0 ] && exit 0
-
-inji .gitlab-ci.j2 --vars-file .gitlab-ci.vars > .gitlab-ci.yaml
-
-git add .gitlab-ci.yaml &&
-  git commit --amend -C HEAD --no-verify
-```
-
-### Etymology
-
-Why the name inji?
-
-Apart from keeping to the UNIX tradition of short (memorable?)
- command names, _inji_ is a 4-letter near-anagram of _Jinja_.
-
-[_inji_](https://en.wikipedia.org/wiki/Ginger#Etymology) (_/ɪndʒi:/_)
-also happens to be the Dravidian word and ostensibly the source of the
-English word Ginger, of which jinja is a partial homophone.
+### What's with the name?
+Inji is a four-letter near-anagram of Jinja. It also happens to be the Dravidian word for ginger, which is a partial homophone for Jinja. Naming things is hard, but we liked this one.
 
 ### TODO
+Only potential ideas so far—no commitment is made:
 
-Only potential ideas so far - No commitment is made.
-
-* [ ] Read config from JSON/TOML files?
-* [ ] Manage collections of templates e.g. `*.j2`
+* [ ] Read config from JSON/TOML files natively
+* [ ] Manage collections of templates (e.g., `*.j2`)
 * [ ] Dry-run syntax checking
 * [ ] Document patterns driving the design and refactor docs
-* [ ] Document use of macros
-* [ ] Document use of vars collections
+* [ ] Document use of macros and vars collections
