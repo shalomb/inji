@@ -42,6 +42,9 @@ Issues = "https://github.com/shalomb/inji/issues"
 inji = "inji.cli:main"
 
 [project.optional-dependencies]
+dev = [
+    "ruff>=0.4.0",
+]
 test = [
     "ansible>=2.8",
     "cffi>=1.14.2",
@@ -63,3 +66,48 @@ security = [
 packages = ["inji"]
 include-package-data = true
 zip-safe = false
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+addopts = "-ra -q -rxXs --color=auto --tb=short -W ignore::DeprecationWarning --showlocals"
+
+# ---------------------------------------------------------------------------
+# coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+omit = [
+    "*/site-packages/*",
+    "*/distutils/*",
+    "tests/*",
+    ".venv/*",
+    "venv/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+
+# ---------------------------------------------------------------------------
+# ruff — linter + formatter
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/W = pycodestyle, F = pyflakes, I = isort, UP = pyupgrade
+select = ["E", "W", "F", "I", "UP"]
+ignore = [
+    # Lambda bodies are intentionally terse; full function defs would bloat
+    # the filters/globals dicts significantly.
+    "E731",  # Do not assign a lambda expression, use a def
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files: allow assert statements and relative imports
+"tests/**/*.py" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
