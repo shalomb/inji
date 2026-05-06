@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/shalomb/inji/compare/inji-v0.6.1...inji-v0.6.2) (2026-05-06)
+
+
+### Bug Fixes
+
+* **ci:** Remove Test PyPI stage, fix action versions in publish.yml ([081c6ca](https://github.com/shalomb/inji/commit/081c6ca7bf4797ee6beb8baf1fadbb2aa84d64e5))
+
 ## [0.6.1](https://github.com/shalomb/inji/compare/inji-v0.6.0...inji-v0.6.1) (2026-05-06)
 
 
