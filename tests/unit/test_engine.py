@@ -54,8 +54,10 @@ class TestTemplateEngineInit:
         """Custom filters are loaded."""
         engine = TemplateEngine()
         # Should have custom filters from inji/filters.py
-        assert 'get' in engine.filters
+        # engine.filters is get_symbols(filters) — all module-level names
         assert 'format_dict' in engine.filters
+        assert 'wrap' in engine.filters
+        assert 'append' in engine.filters
     
     def test_globals_loaded(self):
         """Custom globals are loaded."""
@@ -98,7 +100,7 @@ class TestTemplateEngineRender:
         engine = TemplateEngine()
         # Create a template using a filter
         Path(tmp_templates_dir, 'with_filter.jinja2').write_text(
-            '{{ data | get("key") }}'
+            '{{ data | format_dict("{key}") }}'
         )
         template_path = Path(tmp_templates_dir) / 'with_filter.jinja2'
         
@@ -127,6 +129,7 @@ class TestTemplateEngineRender:
         """Render empty template."""
         engine = TemplateEngine()
         template_path = Path(tmp_templates_dir) / 'empty.jinja2'
+        template_path.write_text('')
         
         output = list(engine.render(str(template_path), {}))
         assert output[0] == ''

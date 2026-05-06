@@ -124,10 +124,8 @@ class TestYamlReading:
             f.flush()
             
             try:
-                # Invalid YAML might not raise, depends on yaml.load
-                result = utils.read_context(f.name)
-                # If it doesn't raise, at least check result is a dict
-                assert isinstance(result, (dict, type(None)))
+                with pytest.raises(Exception):  # yaml.ScannerError
+                    utils.read_context(f.name)
             finally:
                 os.unlink(f.name)
 
@@ -314,11 +312,12 @@ class TestIpApiUtilities:
     @patch('inji.utils.get')
     def test_ip_api_query(self, mock_get):
         """Get specific IP API field."""
-        mock_get.return_value = {
+        import json
+        mock_get.return_value = json.dumps({
             'query': '203.0.113.42',
             'country': 'Example Country',
             'city': 'Example City'
-        }
+        })
         
         result = utils.ip_api('query')
         assert result == '203.0.113.42'
@@ -326,9 +325,10 @@ class TestIpApiUtilities:
     @patch('inji.utils.get')
     def test_ip_api_country(self, mock_get):
         """Get country from IP API."""
-        mock_get.return_value = {
+        import json
+        mock_get.return_value = json.dumps({
             'country': 'Example Country'
-        }
+        })
         
         result = utils.ip_api('country')
         assert result == 'Example Country'
