@@ -108,16 +108,15 @@ test-fast: sync ## Phase 1: Run all unit tests (fast, isolated)
 	@$(pytest) tests/unit/ -v
 	@echo "✅ Unit tests passed"
 
-test-cov: sync ## Phase 2: Run coverage validation (threshold 35%)
+test-cov: sync ## Phase 2: Run coverage validation (threshold 70%)
 	@echo "🧪 Running coverage tests (Phase 2)..."
 	rm -f .coverage
 	$(pytest) \
 		--cov-append \
 		--cov-report term \
 		--cov-report=term-missing \
-		--cov-fail-under=35 \
+		--cov-fail-under=70 \
 		--cov $$PWD/inji/
-	@echo "NOTE: Coverage threshold set to 35% during modernization. Raise as codebase is refactored."
 
 test: sync test-structure test-lint test-fast test-cov ## 🚀 MAIN TARGET: Run complete graduated test ladder
 	@echo ""
