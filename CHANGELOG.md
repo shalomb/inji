@@ -10,6 +10,10 @@
 ## [0.6.1](https://github.com/shalomb/inji/compare/inji-v0.6.0...inji-v0.6.1) (2026-05-06)
 
 
+### ⚠ Breaking Changes
+
+* **python:** Minimum Python version raised from 3.5 to 3.12. Versions 3.5–3.11 are no longer supported.
+
 ### Features
 
 * Modernize inji to v0.6.0 — uv, hatchling, ruff, testing pyramid, justfile ([efe2ffc](https://github.com/shalomb/inji/commit/efe2ffc602174337827d85e895f51b4a1397cf60))

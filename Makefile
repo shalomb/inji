@@ -115,7 +115,7 @@ test-cov: sync ## Phase 2: Run coverage validation (threshold 70%)
 		--cov-append \
 		--cov-report term \
 		--cov-report=term-missing \
-		--cov-fail-under=70 \
+		--cov-fail-under=95 \
 		--cov $$PWD/inji/
 
 test: sync test-structure test-lint test-fast test-cov ## 🚀 MAIN TARGET: Run complete graduated test ladder
