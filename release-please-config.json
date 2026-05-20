@@ -18,5 +18,7 @@
         }
       ]
     }
-  }
+  },
+  "release-search-depth": 400,
+  "commit-search-depth": 500
 }
