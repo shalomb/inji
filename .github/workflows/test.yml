@@ -21,17 +21,14 @@ jobs:
       with:
         version: "latest"
 
+    - name: Install just
+      uses: extractions/setup-just@v2
+
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: make sync
-
-    - name: Lint
-      run: make test-lint
-
     - name: Run tests
-      run: make test
+      run: just test
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v6

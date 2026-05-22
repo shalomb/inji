@@ -72,14 +72,14 @@ test-unit: sync
     @uv run pytest tests/unit/ -q
     @printf "  ✅ unit tests OK\n"
 
-# Phase 2: Full suite + coverage threshold
+# Phase 2: Full suite + coverage threshold (95%)
 test-cov: sync
     @printf "Phase 2 — coverage\n"
     @rm -f .coverage
     @uv run pytest \
         --cov-append \
         --cov-report term-missing \
-        --cov-fail-under=35 \
+        --cov-fail-under=95 \
         --cov inji/
     @printf "  ✅ coverage OK\n"
 
