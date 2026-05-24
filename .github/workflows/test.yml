@@ -22,7 +22,7 @@ jobs:
         version: "latest"
 
     - name: Install just
-      uses: extractions/setup-just@v2
+      uses: extractions/setup-just@v4
 
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
@@ -34,5 +34,5 @@ jobs:
       uses: codecov/codecov-action@v6
       if: matrix.python-version == '3.12'
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         fail_ci_if_error: false
