@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.3](https://github.com/shalomb/inji/compare/v0.6.2...v0.6.3) (2026-06-23)
+
+
+### Features
+
+* Modernize inji to v0.6.0 — uv, hatchling, ruff, testing pyramid, justfile ([efe2ffc](https://github.com/shalomb/inji/commit/efe2ffc602174337827d85e895f51b4a1397cf60))
+
+
+### Bug Fixes
+
+* **ci:** Remove Test PyPI stage from publish workflow; update uv.lock ([2093f64](https://github.com/shalomb/inji/commit/2093f64699d0839f95c517e4e64d29d2bcf677bf))
+* **ci:** Remove Test PyPI stage, fix action versions in publish.yml ([081c6ca](https://github.com/shalomb/inji/commit/081c6ca7bf4797ee6beb8baf1fadbb2aa84d64e5))
+* **deps:** Upgrade authlib, urllib3, idna; bump dependency-review-action ([#28](https://github.com/shalomb/inji/issues/28)) ([69d787e](https://github.com/shalomb/inji/commit/69d787e65c86384d7a9fb9e217fd7f20ac539618))
+
 ## [0.6.2](https://github.com/shalomb/inji/compare/inji-v0.6.1...inji-v0.6.2) (2026-05-06)
 
 
