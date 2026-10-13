@@ -55,3 +55,6 @@ jobs:
       uses: actions/dependency-review-action@v5
       with:
         fail-on-severity: moderate
+        # Same accepted risk as the pip-audit and safety ignores above (CVE-2026-81726,
+        # nltk path traversal, no upstream fix). Drop all three together once nltk ships one.
+        allow-ghsas: GHSA-8mgp-746c-j5xp
