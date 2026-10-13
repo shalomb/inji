@@ -7,6 +7,10 @@ on:
     # Run security checks weekly on Mondays at 10:00 UTC
     - cron: '0 10 * * 1'
 
+# Least privilege: these jobs only read the repo. Nothing here writes to it.
+permissions:
+  contents: read
+
 jobs:
   security-audit:
     runs-on: ubuntu-latest
@@ -27,15 +31,21 @@ jobs:
     - name: Install security tools
       run: uv sync --extra security
 
+    # Accepted risk, revisit when nltk publishes a release newer than 3.10.3
+    # (drop this ignore and the safety one below together):
+    # PYSEC-2026-3740 (CVE-2026-81726) is a path traversal in nltk model save/load
+    # helpers (TransitionParser, AveragedPerceptron, PerceptronTagger). No fix exists
+    # upstream. nltk is a transitive dependency of `safety` (the `security` extra) and is
+    # never installed for users of inji. inji does not import it, and safety only uses nltk.edit_distance.
+    # The previous ignores (PYSEC-2026-89, -97, PYSEC-2024-277) no longer match anything.
     - name: Run pip-audit for vulnerability scanning
       run: |
         uv run pip-audit --desc \
-          --ignore-vuln PYSEC-2026-89 \
-          --ignore-vuln PYSEC-2026-97 \
-          --ignore-vuln PYSEC-2024-277
+          --ignore-vuln PYSEC-2026-3740
 
+    # Same accepted risk as above (CVE-2026-81726), under safety's own ID.
     - name: Check for known security issues with safety
-      run: uv run safety check --json
+      run: uv run safety check --json --ignore SFTY-20260902-58666
 
   dependency-review:
     runs-on: ubuntu-latest
@@ -45,3 +55,6 @@ jobs:
       uses: actions/dependency-review-action@v5
       with:
         fail-on-severity: moderate
+        # Same accepted risk as the pip-audit and safety ignores above (CVE-2026-81726,
+        # nltk path traversal, no upstream fix). Drop all three together once nltk ships one.
+        allow-ghsas: GHSA-8mgp-746c-j5xp

@@ -19,6 +19,7 @@ dependencies = [
     "python-tr",
     "pyyaml>=6.0.2",
     "requests>=2.32.0",
+    "urllib3>=2.8.0",
     "MarkupSafe>=2.1.5"
 ]
 keywords = ["jinja", "jinja2", "templating"]
