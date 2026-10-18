@@ -28,7 +28,7 @@ jobs:
       run: uv sync --extra security
 
     # PYSEC-2026-3740 (GHSA-8mgp-746c-j5xp): nltk pathsec bypass, no patched
-    # release yet. nltk is only a transitive dep of the `safety` dev extra and
+    # release yet (safety: SFTY-20260902-58666). nltk is only a transitive dep of the `safety` dev extra and
     # is never imported by inji. Remove once nltk ships a fix.
     - name: Run pip-audit for vulnerability scanning
       run: |
@@ -39,7 +39,7 @@ jobs:
           --ignore-vuln PYSEC-2026-3740
 
     - name: Check for known security issues with safety
-      run: uv run safety check --json
+      run: uv run safety check --json --ignore SFTY-20260902-58666
 
   dependency-review:
     runs-on: ubuntu-latest
